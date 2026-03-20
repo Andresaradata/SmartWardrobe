@@ -58,14 +58,11 @@ const ONBOARDING_STEPS = [
 
 // ── Seed icons for demo items that have none ───────
 // Runs once at startup — Pollinations URLs load lazily, no blocking
-(function _seedDemoIcons() {
-  const items   = wardrobe.getAll();
-  let   changed = false;
-  items.forEach(item => {
-    if (!item.image) {
-      // generateIcon returns a URL string — stored as image, loaded lazily by browser
-      wardrobe.update(item.id, { image: Recognition.generateIcon(item) });
-      changed = true;
+// Clear any stale Unsplash URLs left from a previous version
+(function _clearBrokenUrls() {
+  wardrobe.getAll().forEach(item => {
+    if (item.image && item.image.startsWith("https://source.unsplash")) {
+      wardrobe.update(item.id, { image: null });
     }
   });
 })();
@@ -347,9 +344,7 @@ function _outfitPieceThumb(item, label) {
   if (!item) return "";
   return `
     <div class="outfit-item-card" onclick="openItemDetail('${item.id}')">
-      ${item.image
-        ? `<img src="${item.image}" alt="${item.name || label}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />`
-        : `<span class="item-emoji">${CATEGORY_EMOJI[item.category] || "👕"}</span>`}
+      ${_itemIcon(item, { size: "100%", radius: "0" })}
       <div class="outfit-item-label">${label} · ${item.name || item.category}</div>
     </div>
   `;
@@ -384,9 +379,7 @@ function _renderWardrobe(activeFilter = "all") {
       <div class="wardrobe-grid" id="wardrobeGrid">
         ${items.length ? items.map(item => `
           <div class="wardrobe-item" data-id="${item.id}" onclick="openItemDetail('${item.id}')">
-            ${item.image
-              ? `<img src="${item.image}" alt="${item.name || item.category}" loading="lazy" onload="this.classList.add('loaded');this.closest('.wardrobe-item').classList.remove('loading')" onerror="this.style.display='none'" />`
-              : `<div class="wardrobe-item-emoji">${CATEGORY_EMOJI[item.category] || "👕"}</div>`}
+            ${_itemIcon(item, { size: "100%", radius: "0" })}
             <div class="item-color-dot" style="background:${COLOR_HEX[item.color] || "#888"};${item.color === "white" ? "border:2px solid #ddd" : ""}"></div>
             <div class="item-badge">${item.name || item.category}</div>
           </div>
@@ -518,9 +511,7 @@ function _wireOutfits() {
           ${pieces.map(p => `
             <div class="outfit-piece" onclick="openItemDetail('${p.item.id}')">
               <div class="outfit-piece-img">
-                ${p.item.image
-                  ? `<img src="${p.item.image}" alt="${p.item.name}" />`
-                  : CATEGORY_EMOJI[p.item.category] || "👕"}
+                ${_itemIcon(p.item, { size: "56px", radius: "var(--radius-sm)" })}
               </div>
               <div class="outfit-piece-info">
                 <div class="outfit-piece-role">${p.role}</div>
@@ -941,26 +932,9 @@ function _renderDetectedItemCard(item, idx) {
     ">
       <div style="display:flex;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-3)">
 
-        <!-- Generated product icon -->
-        <div style="
-          width:72px;height:72px;flex-shrink:0;
-          border-radius:var(--radius-md);
-          background:var(--clr-surface);
-          border:1px solid var(--clr-border);
-          overflow:hidden;position:relative;
-        ">
-          <img
-            src="${iconUrl}"
-            alt="${item.name || item.category}"
-            style="width:100%;height:100%;object-fit:cover;"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-          />
-          <!-- Fallback shown only if image fails to load -->
-          <div style="
-            display:none;position:absolute;inset:0;
-            align-items:center;justify-content:center;
-            font-size:1.8rem;background:var(--clr-surface-2);
-          ">${CATEGORY_EMOJI[item.category] || "👕"}</div>
+        <!-- Product icon -->
+        <div style="width:72px;height:72px;flex-shrink:0;border-radius:var(--radius-md);overflow:hidden">
+          ${_itemIcon(item, { size: "72px", radius: "var(--radius-md)" })}
         </div>
 
         <div style="flex:1">
@@ -1114,10 +1088,8 @@ function openItemDetail(id) {
   const content = document.getElementById("itemDetailContent");
 
   content.innerHTML = `
-    <div style="text-align:center;margin-bottom:var(--sp-4)">
-      ${item.image
-        ? `<img src="${item.image}" alt="${item.name}" class="item-detail-img" />`
-        : `<div class="item-detail-img" style="display:flex;align-items:center;justify-content:center;font-size:5rem;background:var(--clr-surface-2)">${CATEGORY_EMOJI[item.category] || "👕"}</div>`}
+    <div style="margin-bottom:var(--sp-4);border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:1">
+      ${_itemIcon(item, { size: "100%", radius: "var(--radius-lg)", fontSize: "5rem" })}
     </div>
 
     <div class="item-detail-name">${item.name || item.category}</div>
@@ -1190,6 +1162,37 @@ function _setupItemDetailModal() {
 // ══════════════════════════════════════════════════
 //  UTILITIES
 // ══════════════════════════════════════════════════
+
+// ── Item icon renderer ─────────────────────────────
+// If item has a real photo → show it. Otherwise → SVG clothing silhouette.
+function _itemIcon(item, { size = "100%", radius = "var(--radius-md)", fontSize = "1.4rem" } = {}) {
+  if (item.image && !item.image.startsWith("https://source.unsplash")) {
+    // Real uploaded photo
+    return `<img src="${item.image}" alt="${item.name || item.category}"
+      style="width:${size};height:${size};object-fit:cover;border-radius:${radius}"
+      onload="this.classList.add('loaded')" onerror="this.style.display='none'"
+      class="lazy" />`;
+  }
+
+  // SVG icon card
+  const tint     = COLOR_TINT[item.color]  || "#f0f0f5";
+  const iconClr  = COLOR_ICON[item.color]  || "#333";
+  const svgPath  = CATEGORY_SVG[item.category] || CATEGORY_SVG.tops;
+
+  return `
+    <div style="
+      width:${size};height:${size};
+      background:${tint};
+      border-radius:${radius};
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;position:relative;
+    ">
+      <svg viewBox="0 0 24 24" style="width:65%;height:65%;color:${iconClr}"
+        xmlns="http://www.w3.org/2000/svg">
+        ${svgPath}
+      </svg>
+    </div>`;
+}
 
 // ── Lazy image fade-in ─────────────────────────────
 function _initLazyImages() {

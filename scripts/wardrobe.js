@@ -19,6 +19,37 @@ const COLOR_HEX = {
   pink:   "#ec4899",
 };
 
+// Light background tint per color (for icon cards)
+const COLOR_TINT = {
+  black: "#e8e8ec", white: "#f0f0f5", navy: "#dde4f5",
+  grey:  "#ececf2", beige: "#f5ede0", brown: "#f0e6dc",
+  green: "#d8f0e6", blue:  "#ddeeff", red:  "#fde8e8",
+  pink:  "#fde8f3",
+};
+
+// Icon color (the SVG fill on the tinted background)
+const COLOR_ICON = {
+  black: "#222",    white: "#999",    navy:  "#1a2e5a",
+  grey:  "#555",    beige: "#8a6a40", brown: "#7b4f2e",
+  green: "#2d6a4f", blue:  "#1d4ed8", red:   "#dc2626",
+  pink:  "#db2777",
+};
+
+// SVG paths for each clothing category (viewBox 0 0 24 24)
+const CATEGORY_SVG = {
+  tops: `<path d="M20 7.5L16 4h-1.5C14.5 5.1 13.4 6 12 6S9.5 5.1 9.5 4H8L4 7.5 6.5 10 8 8.8V20h8V8.8L17.5 10z" fill="currentColor"/>`,
+
+  bottoms: `<path d="M6 4L5 20h5.5l1.5-7 1.5 7H19l-1-16z" fill="currentColor"/><path d="M6 4h12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>`,
+
+  shoes: `<path d="M3 16.5c0-1.7 1.3-3 3-3h5l3.5-4.5c1-1.5 3.5-1 4.5.5.8 1.2.3 2.8-1 3.5L19 16.5H3z" fill="currentColor"/><path d="M19 13.5c.5-.5.5-1.5 0-2" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>`,
+
+  outerwear: `<path d="M15.5 4L21 9l-3 3-2.2-2V20H8.2V10L6 12l-3-3 5.5-5c.5 1.8 2 3 3.5 3s3-1.2 3.5-3z" fill="currentColor"/><line x1="12" y1="8" x2="12" y2="14" stroke="currentColor" stroke-width="1.2" fill="none"/>`,
+
+  dresses: `<path d="M12 2c-1.2 0-3 1.2-3.8 3L5 20h14L15.8 5C15 3.2 13.2 2 12 2z" fill="currentColor"/><path d="M9.2 5h5.6" stroke="white" stroke-width="1" fill="none" stroke-linecap="round" opacity=".4"/>`,
+
+  accessories: `<path d="M8 9V6.5C8 4.6 9.8 3 12 3s4 1.6 4 3.5V9h3.5l1 12H3.5l1-12H8z" fill="currentColor"/><path d="M10 9V6.5C10 5.7 10.9 5 12 5s2 .7 2 1.5V9" stroke="currentColor" stroke-width="1.2" fill="none"/>`,
+};
+
 // ── Emoji fallbacks per category ──────────────────
 const CATEGORY_EMOJI = {
   tops:        "👕",

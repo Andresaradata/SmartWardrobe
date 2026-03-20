@@ -133,43 +133,8 @@ Rules:
    * Uses Unsplash Source — real photos, instant, no API key.
    * The seed is deterministic so the same item always gets the same photo.
    */
-  function generateIcon(item) {
-    // Map our categories/colors to accurate Unsplash search keywords
-    const categoryKeywords = {
-      tops:        "shirt tshirt top clothing",
-      bottoms:     "pants jeans trousers clothing",
-      shoes:       "shoes sneakers footwear",
-      outerwear:   "jacket coat outerwear clothing",
-      accessories: "fashion accessory bag",
-      dresses:     "dress clothing fashion",
-    };
-
-    const colorKeywords = {
-      black: "black", white: "white", navy: "navy blue",
-      grey: "grey", beige: "beige", brown: "brown",
-      green: "green", blue: "blue", red: "red", pink: "pink",
-    };
-
-    const category = categoryKeywords[item.category] || "clothing fashion";
-    const color    = colorKeywords[item.color]        || item.color;
-    const query    = encodeURIComponent(`${color} ${category}`);
-
-    // Deterministic seed → same item always gets same photo
-    const seed = _hashStr(`${item.color}_${item.category}_${item.name || ""}`);
-
-    // Unsplash Source API — 400x400, specific query, deterministic result
-    return `https://source.unsplash.com/400x400/?${query}&sig=${seed}`;
-  }
-
-  // Deterministic hash → consistent seed per item
-  function _hashStr(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash) % 9999;
-  }
+  // Icon generation is now handled by SVG in wardrobe.js — no external API needed
+  function generateIcon(item) { return null; }
 
   return { analyzeMultiple, generateIcon };
 })();

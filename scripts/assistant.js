@@ -18,14 +18,11 @@ const Assistant = (() => {
 
     const systemPrompt = _buildSystemPrompt();
 
-    // Add user message to history
-    _history.push({ role: "user", content: userMessage });
-
     // Keep history to last 10 turns to avoid token overflow
-    const recentHistory = _history.slice(-10);
+    const recentHistory = [..._history.slice(-9), { role: "user", content: userMessage }];
 
     try {
-      const response = await fetch(CONFIG.GROQ_API_URL, {
+      const response = await window.fetch(CONFIG.GROQ_API_URL, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${CONFIG.GROQ_API_KEY}`,
@@ -43,22 +40,23 @@ const Assistant = (() => {
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        console.error("Groq chat error:", err);
-        return "Sorry, I couldn't reach the AI right now. Try again in a moment.";
+        const errText = await response.text();
+        console.error("Groq chat error:", response.status, errText);
+        return `AI error (${response.status}): ${errText.slice(0, 120)}`;
       }
 
       const data  = await response.json();
       const reply = data.choices?.[0]?.message?.content || "I didn't get a response. Please try again.";
 
-      // Add assistant reply to history
+      // Only add to history on success
+      _history.push({ role: "user",      content: userMessage });
       _history.push({ role: "assistant", content: reply });
 
       return reply;
 
     } catch (err) {
-      console.error("Assistant error:", err);
-      return "Something went wrong. Check your connection and try again.";
+      console.error("Assistant fetch error:", err);
+      return `Connection error: ${err.message}. Make sure your Groq API key is set in config.js and you're running via a local server (not file://).`;
     }
   }
 

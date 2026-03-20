@@ -87,17 +87,29 @@ const Weather = (() => {
   // Fetch from Open-Meteo (free, no API key)
   async function fetch() {
     try {
-      // Get user coordinates
-      const pos = await _getPosition();
-      const { latitude, longitude } = pos.coords;
+      // Try browser geolocation first, fall back to IP-based location
+      let latitude, longitude, locName;
+
+      try {
+        const pos = await _getPosition();
+        latitude  = pos.coords.latitude;
+        longitude = pos.coords.longitude;
+        locName   = await _reverseGeocode(latitude, longitude);
+      } catch {
+        // Browser geolocation denied or unavailable — use IP geolocation
+        console.warn("Browser geolocation denied, falling back to IP geolocation");
+        const ipLoc = await _ipGeolocate();
+        latitude  = ipLoc.latitude;
+        longitude = ipLoc.longitude;
+        locName   = ipLoc.city || "Your location";
+      }
 
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&wind_speed_unit=kmh&temperature_unit=celsius&timezone=auto`;
       const res  = await window.fetch(url);
       const json = await res.json();
 
-      const c       = json.current;
-      const wmo     = _getWMO(c.weather_code);
-      const locName = await _reverseGeocode(latitude, longitude);
+      const c   = json.current;
+      const wmo = _getWMO(c.weather_code);
 
       _current = {
         temperature:  Math.round(c.temperature_2m),
@@ -127,8 +139,25 @@ const Weather = (() => {
     });
   }
 
-  // Reverse geocode using Open-Meteo's timezone response (city not available there)
-  // Use a simple free API instead
+  // IP-based geolocation via ipapi.co — works without browser permission
+  async function _ipGeolocate() {
+    const key = (typeof CONFIG !== "undefined" && CONFIG.IPAPI_KEY) ? CONFIG.IPAPI_KEY : "";
+    const url = key
+      ? `https://ipapi.co/json/?key=${key}`
+      : "https://ipapi.co/json/";
+    try {
+      const res  = await window.fetch(url);
+      const json = await res.json();
+      if (!json.latitude) throw new Error("No coordinates in response");
+      return { latitude: json.latitude, longitude: json.longitude, city: json.city };
+    } catch (err) {
+      console.warn("IP geolocation failed:", err.message);
+      // Last resort: default to Paris
+      return { latitude: 48.8566, longitude: 2.3522, city: "Paris" };
+    }
+  }
+
+  // Reverse geocode via Nominatim
   async function _reverseGeocode(lat, lon) {
     try {
       const res  = await window.fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);

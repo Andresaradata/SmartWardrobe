@@ -125,8 +125,8 @@
         <input type="file" id="fileInput" accept="image/*" class="hidden" />
       </div>
 
-      <!-- Form fields (pre-filled by AI, all editable) -->
-      <div class="form-grid" id="itemForm">
+      <!-- Form fields (pre-filled by AI, all editable) — hidden until photo uploaded -->
+      <div class="form-grid hidden" id="itemForm">
 
         <!-- Category -->
         <div class="form-group">
@@ -230,11 +230,12 @@
 
       </div><!-- /form-grid -->
 
-      <button class="btn-primary" id="saveItemBtn">
+      <button class="btn-primary hidden" id="saveItemBtn">
         <i data-lucide="check"></i>
         Save to Wardrobe
       </button>
       <button class="btn-ghost" id="cancelAddBtn">Cancel</button>
+
     </div>
   </div>
 

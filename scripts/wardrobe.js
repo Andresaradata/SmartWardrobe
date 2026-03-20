@@ -396,3 +396,4 @@ function generateId() {
 
 // Singleton
 const wardrobe = new Wardrobe();
+

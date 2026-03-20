@@ -1665,3 +1665,249 @@ input, textarea {
     box-shadow: 0 0 60px rgba(0,0,0,0.12);
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   UI POLISH — v2
+═══════════════════════════════════════════════════ */
+
+/* ── Skeleton shimmer ─────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--clr-surface-2) 25%,
+    #e8e8f0 50%,
+    var(--clr-surface-2) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+
+/* ── Image fade-in on load ────────────────────────── */
+img.lazy { opacity: 0; transition: opacity 0.4s ease; }
+img.lazy.loaded { opacity: 1; }
+
+/* ── Header scroll shadow ─────────────────────────── */
+.app-header.scrolled {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+/* ── Bottom nav — active indicator dot ───────────── */
+.nav-btn.active::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: var(--clr-primary);
+  border-radius: 50%;
+  margin: 1px auto 0;
+}
+.nav-add.active::after { display: none; }
+
+/* ── Wardrobe item — richer card ─────────────────── */
+.wardrobe-item {
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+}
+.wardrobe-item:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-md);
+}
+.wardrobe-item:active {
+  transform: scale(0.96);
+  box-shadow: none;
+}
+
+/* Skeleton state for wardrobe items loading images */
+.wardrobe-item.loading {
+  background: linear-gradient(90deg,
+    var(--clr-surface-2) 25%,
+    #e8e8f0 50%,
+    var(--clr-surface-2) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+.wardrobe-item.loading img { opacity: 0; }
+.wardrobe-item img {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.wardrobe-item img.loaded { opacity: 1; }
+
+/* ── Dashboard improvements ──────────────────────── */
+.weather-card {
+  box-shadow: 0 8px 32px rgba(108,71,255,0.25);
+}
+
+.stat-card {
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
+  cursor: default;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Outfit item card polish */
+.outfit-item-card {
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.outfit-item-card:hover {
+  transform: scale(1.03);
+}
+.outfit-item-card img {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.outfit-item-card img.loaded { opacity: 1; }
+
+/* ── Section divider ─────────────────────────────── */
+.section-header {
+  margin-top: var(--sp-6);
+}
+
+/* ── Filter chips — smoother ─────────────────────── */
+.filter-chip {
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.filter-chip:active { transform: scale(0.94); }
+
+/* ── Outfit result card polish ───────────────────── */
+.outfit-result-card {
+  animation: cardIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes cardIn {
+  from { opacity:0; transform: translateY(16px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+
+.outfit-piece {
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.outfit-piece:hover { background: var(--clr-primary-light); }
+.outfit-piece:active { background: #ddd6ff; }
+
+.outfit-piece-img {
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.outfit-piece-img img {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.outfit-piece-img img.loaded { opacity: 1; }
+
+/* ── Chat bubble line breaks ─────────────────────── */
+.chat-bubble { white-space: pre-line; }
+.chat-bubble.ai {
+  border-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--sp-1);
+}
+.chat-bubble.user {
+  border-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--sp-1);
+}
+
+/* Quick replies scroll */
+.chat-quick-replies {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  padding-bottom: var(--sp-2);
+}
+.chat-quick-replies::-webkit-scrollbar { display: none; }
+.quick-reply {
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.quick-reply:hover {
+  background: var(--clr-primary);
+  color: #fff;
+}
+
+/* ── Item detail — image polish ──────────────────── */
+.item-detail-img img {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.item-detail-img img.loaded { opacity: 1; }
+
+/* ── Onboarding option hover ─────────────────────── */
+.step-option {
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.step-option:hover:not(.selected) {
+  border-color: var(--clr-primary);
+  background: var(--clr-primary-light);
+  transform: translateX(4px);
+}
+
+/* ── Modal sheet — polish ────────────────────────── */
+.modal-sheet {
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+}
+
+/* ── Btn primary pulse on save ────────────────────── */
+.btn-primary:active {
+  animation: btnPulse 0.25s ease;
+}
+@keyframes btnPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+/* ── Profile bar animation ───────────────────────── */
+.style-bar-fill {
+  transition: width 1s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── Empty state polish ──────────────────────────── */
+.empty-wardrobe {
+  padding: var(--sp-12) var(--sp-8);
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── Wardrobe item badge ─────────────────────────── */
+.item-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+/* ── Toast — better look ─────────────────────────── */
+.toast {
+  box-shadow: var(--shadow-lg);
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+/* ── Detecting overlay ───────────────────────────── */
+.detecting-overlay {
+  gap: var(--sp-2);
+}
+.detecting-text {
+  font-size: var(--text-xs);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ── Input focus ring ────────────────────────────── */
+.text-input:focus,
+.number-input:focus,
+.chat-input:focus {
+  box-shadow: 0 0 0 3px rgba(108,71,255,0.15);
+}

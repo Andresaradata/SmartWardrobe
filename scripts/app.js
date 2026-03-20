@@ -56,6 +56,20 @@ const ONBOARDING_STEPS = [
   },
 ];
 
+// ── Seed icons for demo items that have none ───────
+// Runs once at startup — Pollinations URLs load lazily, no blocking
+(function _seedDemoIcons() {
+  const items   = wardrobe.getAll();
+  let   changed = false;
+  items.forEach(item => {
+    if (!item.image) {
+      // generateIcon returns a URL string — stored as image, loaded lazily by browser
+      wardrobe.update(item.id, { image: Recognition.generateIcon(item) });
+      changed = true;
+    }
+  });
+})();
+
 // ── Boot ───────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", async () => {
   // Fetch weather in background immediately
@@ -169,7 +183,17 @@ function _showApp() {
   _setupNav();
   _setupAddModal();
   _setupItemDetailModal();
+  _setupScrollShadow();
   navigateTo("dashboard");
+}
+
+// Header drop shadow on scroll
+function _setupScrollShadow() {
+  const main   = document.getElementById("mainContent");
+  const header = document.querySelector(".app-header");
+  main.addEventListener("scroll", () => {
+    header.classList.toggle("scrolled", main.scrollTop > 4);
+  }, { passive: true });
 }
 
 // ── Navigation ─────────────────────────────────────
@@ -206,6 +230,7 @@ function navigateTo(screen) {
 
   lucide.createIcons();
   _wireScreen(screen);
+  _initLazyImages();
 }
 
 function _wireScreen(screen) {
@@ -323,9 +348,9 @@ function _outfitPieceThumb(item, label) {
   return `
     <div class="outfit-item-card" onclick="openItemDetail('${item.id}')">
       ${item.image
-        ? `<img src="${item.image}" alt="${item.name}" />`
+        ? `<img src="${item.image}" alt="${item.name || label}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />`
         : `<span class="item-emoji">${CATEGORY_EMOJI[item.category] || "👕"}</span>`}
-      <div class="outfit-item-label">${label}</div>
+      <div class="outfit-item-label">${label} · ${item.name || item.category}</div>
     </div>
   `;
 }
@@ -360,7 +385,7 @@ function _renderWardrobe(activeFilter = "all") {
         ${items.length ? items.map(item => `
           <div class="wardrobe-item" data-id="${item.id}" onclick="openItemDetail('${item.id}')">
             ${item.image
-              ? `<img src="${item.image}" alt="${item.name}" />`
+              ? `<img src="${item.image}" alt="${item.name || item.category}" loading="lazy" onload="this.classList.add('loaded');this.closest('.wardrobe-item').classList.remove('loading')" onerror="this.style.display='none'" />`
               : `<div class="wardrobe-item-emoji">${CATEGORY_EMOJI[item.category] || "👕"}</div>`}
             <div class="item-color-dot" style="background:${COLOR_HEX[item.color] || "#888"};${item.color === "white" ? "border:2px solid #ddd" : ""}"></div>
             <div class="item-badge">${item.name || item.category}</div>
@@ -737,16 +762,16 @@ function _sustainDesc(score, total) {
 }
 
 // ══════════════════════════════════════════════════
-//  ADD ITEM MODAL
+//  ADD ITEM MODAL — supports multi-item detection
 // ══════════════════════════════════════════════════
 
-let _pendingImage    = null; // base64 compressed image
-let _selectedFile    = null; // original File object for AI
+let _pendingImage  = null;  // base64 compressed photo
+let _detectedItems = [];    // array of items detected by AI (may be >1)
 
 function openAddModal() {
-  _pendingImage = null;
-  _selectedFile = null;
-  _resetAddForm();
+  _pendingImage  = null;
+  _detectedItems = [];
+  _showUploadStep();
   document.getElementById("addModal").classList.remove("hidden");
   lucide.createIcons();
 }
@@ -755,75 +780,91 @@ function closeAddModal() {
   document.getElementById("addModal").classList.add("hidden");
 }
 
-function _resetAddForm() {
-  // Reset upload zone
-  const zone = document.getElementById("uploadZone");
-  zone.classList.remove("has-image");
-  document.getElementById("uploadContent").classList.remove("hidden");
-  document.getElementById("detectingOverlay").classList.add("hidden");
-
-  // Remove preview image if any
-  zone.querySelectorAll("img.preview-img").forEach(el => el.remove());
-
-  // Reset all selectors to defaults
-  _setActive("categorySelect", "tops");
-  _setActive("colorSelect",    "black");
-  _setActive("warmthSelect",   "1");
-  document.querySelectorAll("#seasonSelect .sel-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll("#tagSelect .tag-btn").forEach(b => b.classList.remove("active"));
-
-  // Clear text inputs
-  ["itemName","itemBrand","itemTimesWorn","itemLastWorn"].forEach(id => {
-    document.getElementById(id).value = "";
-  });
-}
-
 function _setupAddModal() {
-  // Backdrop & cancel close
   document.getElementById("addModalBackdrop").addEventListener("click", closeAddModal);
   document.getElementById("cancelAddBtn").addEventListener("click", closeAddModal);
 
-  // Upload zone tap → file input
   document.getElementById("uploadZone").addEventListener("click", (e) => {
     if (e.target.closest(".detecting-overlay")) return;
     document.getElementById("fileInput").click();
   });
 
-  // File selected
   document.getElementById("fileInput").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    _selectedFile = file;
 
-    // Show preview
     const compressed = await compressImage(file);
     _pendingImage = compressed;
     _showImagePreview(compressed);
 
-    // Trigger AI recognition
-    await _runRecognition(file, compressed);
+    // Show detecting overlay
+    document.getElementById("detectingOverlay").classList.remove("hidden");
 
-    // Reset file input so same file can be re-selected
+    // Detect all items in photo
+    const items = await Recognition.analyzeMultiple(compressed);
+    document.getElementById("detectingOverlay").classList.add("hidden");
+
+    _detectedItems = items;
+
+    if (items.length > 1) {
+      // Multiple items — switch to review mode
+      _showMultiItemReview(items, compressed);
+    } else {
+      // Single item — fill the standard form, pre-generate icon as fallback
+      const detected = items[0];
+      _applyRecognitionResult(detected);
+      // Store the generated icon URL; will be overridden by real photo if user uploaded one
+      if (!_pendingImage) {
+        _pendingImage = Recognition.generateIcon(detected);
+      }
+      document.getElementById("itemForm").classList.remove("hidden");
+      document.getElementById("saveItemBtn").classList.remove("hidden");
+      document.getElementById("cancelAddBtn").classList.remove("hidden");
+    }
+
     e.target.value = "";
   });
 
-  // Save item
-  document.getElementById("saveItemBtn").addEventListener("click", _saveItem);
+  document.getElementById("saveItemBtn").addEventListener("click", _saveSingleItem);
 
-  // Selection grids
   _setupSelectionGrid("categorySelect", false);
   _setupSelectionGrid("colorSelect",    false);
-  _setupSelectionGrid("seasonSelect",   true);  // multi-select
+  _setupSelectionGrid("seasonSelect",   true);
   _setupSelectionGrid("warmthSelect",   false);
   _setupTagGrid();
+}
+
+// ── Upload step (initial state) ────────────────────
+function _showUploadStep() {
+  const zone = document.getElementById("uploadZone");
+  zone.classList.remove("has-image");
+  document.getElementById("uploadContent").classList.remove("hidden");
+  document.getElementById("detectingOverlay").classList.add("hidden");
+  zone.querySelectorAll("img.preview-img").forEach(el => el.remove());
+
+  // Reset form to defaults
+  _setActive("categorySelect", "tops");
+  _setActive("colorSelect",    "black");
+  _setActive("warmthSelect",   "1");
+  document.querySelectorAll("#seasonSelect .sel-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#tagSelect .tag-btn").forEach(b => b.classList.remove("active"));
+  ["itemName","itemBrand","itemTimesWorn","itemLastWorn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  // Show/hide correct sections
+  document.getElementById("itemForm").classList.add("hidden");
+  document.getElementById("saveItemBtn").classList.add("hidden");
+
+  // Remove any multi-item review if present
+  document.getElementById("multiItemReview")?.remove();
 }
 
 function _showImagePreview(base64) {
   const zone = document.getElementById("uploadZone");
   zone.classList.add("has-image");
   document.getElementById("uploadContent").classList.add("hidden");
-
-  // Remove old preview
   zone.querySelectorAll("img.preview-img").forEach(el => el.remove());
 
   const img = document.createElement("img");
@@ -833,19 +874,152 @@ function _showImagePreview(base64) {
   zone.insertBefore(img, zone.querySelector(".detecting-overlay"));
 }
 
-async function _runRecognition(file, base64) {
-  const overlay = document.getElementById("detectingOverlay");
-  overlay.classList.remove("hidden");
+// ── Multi-item review UI ───────────────────────────
+function _showMultiItemReview(items, photoBase64) {
+  document.getElementById("itemForm").classList.add("hidden");
+  document.getElementById("saveItemBtn").classList.add("hidden");
+  document.getElementById("cancelAddBtn").classList.add("hidden");
+  document.getElementById("multiItemReview")?.remove();
 
-  try {
-    const result = await Recognition.analyze(base64);
-    if (result) _applyRecognitionResult(result);
-  } finally {
-    overlay.classList.add("hidden");
-  }
+  // Generate icon URLs for all items immediately (Pollinations builds lazily)
+  items.forEach(item => {
+    if (!item._iconUrl) item._iconUrl = Recognition.generateIcon(item);
+  });
+
+  const reviewHtml = `
+    <div id="multiItemReview">
+      <p style="font-size:var(--text-sm);color:var(--clr-text-2);margin-bottom:var(--sp-4)">
+        ✦ AI detected <strong>${items.length} items</strong> — icons are generating.
+        Review and save.
+      </p>
+
+      <div id="detectedItemsList">
+        ${items.map((item, i) => _renderDetectedItemCard(item, i)).join("")}
+      </div>
+
+      <div style="border-top:1px solid var(--clr-border);padding-top:var(--sp-4);margin-top:var(--sp-2)">
+        <p style="font-size:var(--text-xs);color:var(--clr-text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:var(--sp-3)">Apply to all items (optional)</p>
+        <input type="text"   id="batchBrand"      class="text-input"    placeholder="Brand (e.g. Zara)"       style="margin-bottom:var(--sp-3)" />
+        <input type="number" id="batchTimesWorn"  class="number-input"  placeholder="Times worn (e.g. 5)"     style="margin-bottom:var(--sp-3)" min="0" />
+        <input type="date"   id="batchLastWorn"   class="text-input" />
+      </div>
+
+      <button class="btn-primary" id="saveAllItemsBtn" style="margin-top:var(--sp-5)">
+        <i data-lucide="check"></i>
+        Save all ${items.length} items to Wardrobe
+      </button>
+      <button class="btn-ghost" id="cancelMultiBtn">Cancel</button>
+    </div>
+  `;
+
+  document.getElementById("uploadZone").insertAdjacentHTML("afterend", reviewHtml);
+  lucide.createIcons();
+
+  document.querySelectorAll(".remove-detected-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.idx);
+      _detectedItems.splice(idx, 1);
+      if (_detectedItems.length === 0) { closeAddModal(); return; }
+      _showMultiItemReview(_detectedItems, photoBase64);
+    });
+  });
+
+  document.getElementById("saveAllItemsBtn").addEventListener("click", () => _saveAllDetectedItems());
+  document.getElementById("cancelMultiBtn").addEventListener("click", closeAddModal);
 }
 
+function _renderDetectedItemCard(item, idx) {
+  const iconUrl = item._iconUrl || "";
+
+  return `
+    <div class="detected-item-card" id="detectedCard_${idx}" style="
+      background:var(--clr-surface-2);
+      border:1.5px solid var(--clr-border);
+      border-radius:var(--radius-lg);
+      padding:var(--sp-4);
+      margin-bottom:var(--sp-3);
+    ">
+      <div style="display:flex;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+
+        <!-- Generated product icon -->
+        <div style="
+          width:72px;height:72px;flex-shrink:0;
+          border-radius:var(--radius-md);
+          background:var(--clr-surface);
+          border:1px solid var(--clr-border);
+          overflow:hidden;position:relative;
+        ">
+          <img
+            src="${iconUrl}"
+            alt="${item.name || item.category}"
+            style="width:100%;height:100%;object-fit:cover;"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          />
+          <!-- Fallback shown only if image fails to load -->
+          <div style="
+            display:none;position:absolute;inset:0;
+            align-items:center;justify-content:center;
+            font-size:1.8rem;background:var(--clr-surface-2);
+          ">${CATEGORY_EMOJI[item.category] || "👕"}</div>
+        </div>
+
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:var(--text-sm);margin-bottom:2px">${item.name || item.category}</div>
+          <div style="font-size:var(--text-xs);color:var(--clr-text-2);text-transform:capitalize;margin-bottom:var(--sp-2)">
+            ${item.color} · ${item.category}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${(item.season||[]).map(s => `<span class="item-tag">${s}</span>`).join("")}
+            ${(item.style||[]).slice(0,2).map(s => `<span class="item-tag">${s}</span>`).join("")}
+          </div>
+        </div>
+
+        <button class="remove-detected-btn" data-idx="${idx}" style="
+          width:28px;height:28px;border-radius:50%;background:#fee2e2;
+          color:var(--clr-error);font-size:1.1rem;font-weight:700;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        ">×</button>
+      </div>
+
+      <!-- Editable name -->
+      <input type="text" class="text-input detected-name" data-idx="${idx}"
+        placeholder="Item name (optional)" value="${item.name || ""}"
+        style="font-size:var(--text-sm)" />
+    </div>
+  `;
+}
+
+function _saveAllDetectedItems() {
+  const brand     = document.getElementById("batchBrand")?.value.trim() || "";
+  const timesWorn = document.getElementById("batchTimesWorn")?.value    || 0;
+  const lastWorn  = document.getElementById("batchLastWorn")?.value     || null;
+
+  // Sync edited names back to _detectedItems
+  document.querySelectorAll(".detected-name").forEach(input => {
+    const idx = parseInt(input.dataset.idx);
+    if (_detectedItems[idx]) _detectedItems[idx].name = input.value.trim();
+  });
+
+  _detectedItems.forEach(item => {
+    wardrobe.add({
+      ...item,
+      brand,
+      timesWorn,
+      lastWorn,
+      image: item._iconUrl || null, // generated product icon URL
+    });
+  });
+
+  closeAddModal();
+  showToast(`${_detectedItems.length} items added to wardrobe ✓`, "success");
+
+  if (currentScreen === "wardrobe")  navigateTo("wardrobe");
+  if (currentScreen === "dashboard") navigateTo("dashboard");
+}
+
+// ── Single item helpers ────────────────────────────
 function _applyRecognitionResult(result) {
+  if (!result) return;
   if (result.category) _setActive("categorySelect", result.category);
   if (result.color)    _setActive("colorSelect",    result.color);
   if (result.warmth)   _setActive("warmthSelect",   String(result.warmth));
@@ -855,22 +1029,17 @@ function _applyRecognitionResult(result) {
       b.classList.toggle("active", result.season.includes(b.dataset.val));
     });
   }
-
   if (result.style) {
     document.querySelectorAll("#tagSelect .tag-btn").forEach(b => {
       b.classList.toggle("active", result.style.includes(b.dataset.val));
     });
   }
-
-  if (result.name) {
-    document.getElementById("itemName").value = result.name;
-  }
+  if (result.name) document.getElementById("itemName").value = result.name;
 }
 
 function _setupSelectionGrid(containerId, multiSelect) {
   const container = document.getElementById(containerId);
   if (!container) return;
-
   container.querySelectorAll("[data-val]").forEach(btn => {
     btn.addEventListener("click", () => {
       if (multiSelect) {
@@ -906,7 +1075,7 @@ function _getMultiSelected(containerId) {
   return [...document.querySelectorAll(`#${containerId} [data-val].active`)].map(b => b.dataset.val);
 }
 
-function _saveItem() {
+function _saveSingleItem() {
   const category = _getSelected("categorySelect");
   const color    = _getSelected("colorSelect");
   const warmth   = parseInt(_getSelected("warmthSelect") || "1");
@@ -921,20 +1090,15 @@ function _saveItem() {
     name:      document.getElementById("itemName").value.trim(),
     brand:     document.getElementById("itemBrand").value.trim(),
     timesWorn: document.getElementById("itemTimesWorn").value || 0,
-    lastWorn:  document.getElementById("itemLastWorn").value || null,
-    category,
-    color,
-    warmth,
-    season,
-    style,
+    lastWorn:  document.getElementById("itemLastWorn").value  || null,
+    category, color, warmth, season, style,
     image: _pendingImage,
   });
 
   closeAddModal();
   showToast(`${item.name || "Item"} added to wardrobe ✓`, "success");
 
-  // Refresh wardrobe screen if on it
-  if (currentScreen === "wardrobe") navigateTo("wardrobe");
+  if (currentScreen === "wardrobe")  navigateTo("wardrobe");
   if (currentScreen === "dashboard") navigateTo("dashboard");
 }
 
@@ -1026,6 +1190,30 @@ function _setupItemDetailModal() {
 // ══════════════════════════════════════════════════
 //  UTILITIES
 // ══════════════════════════════════════════════════
+
+// ── Lazy image fade-in ─────────────────────────────
+function _initLazyImages() {
+  document.querySelectorAll("img:not(.lazy-init)").forEach(img => {
+    img.classList.add("lazy", "lazy-init");
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add("loaded");
+    } else {
+      img.addEventListener("load",  () => img.classList.add("loaded"), { once: true });
+      img.addEventListener("error", () => img.classList.add("loaded"), { once: true });
+    }
+  });
+
+  // Add skeleton class to wardrobe items while image is loading
+  document.querySelectorAll(".wardrobe-item").forEach(card => {
+    const img = card.querySelector("img");
+    if (!img) return;
+    if (!img.complete || img.naturalWidth === 0) {
+      card.classList.add("loading");
+      img.addEventListener("load",  () => card.classList.remove("loading"), { once: true });
+      img.addEventListener("error", () => card.classList.remove("loading"), { once: true });
+    }
+  });
+}
 
 function showToast(message, type = "") {
   const toast = document.getElementById("toast");

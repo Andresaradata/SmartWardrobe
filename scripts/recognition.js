@@ -1,39 +1,47 @@
 // ═══════════════════════════════════════════════════
 //  recognition.js — Clothing recognition via Groq Vision
+//  Supports multi-item detection from a single photo.
 // ═══════════════════════════════════════════════════
 
 const Recognition = (() => {
 
   /**
-   * Analyze a clothing image using Groq's vision model.
-   * Returns structured attributes or null on failure.
+   * Detect ALL clothing items in a photo.
+   * Returns an array of item objects (one per detected item).
    * @param {string} base64Image — full data:image/jpeg;base64,... string
+   * @returns {Array} [{category, color, season, warmth, style, name}, ...]
    */
-  async function analyze(base64Image) {
+  async function analyzeMultiple(base64Image) {
     if (!CONFIG.GROQ_API_KEY || CONFIG.GROQ_API_KEY === "YOUR_GROQ_API_KEY_HERE") {
       console.warn("Groq API key not set — returning mock recognition");
-      return _mockResult();
+      return [_mockItem()];
     }
 
-    const prompt = `You are a fashion expert analyzing a clothing item photo.
+    const prompt = `You are a fashion expert analyzing a clothing photo.
 
-Return ONLY a valid JSON object with these exact fields (no markdown, no explanation):
-{
-  "category": one of ["tops","bottoms","shoes","outerwear","accessories","dresses"],
-  "color": one of ["black","white","navy","grey","beige","brown","green","blue","red","pink"],
-  "season": array of one or more of ["spring","summer","autumn","winter","all"],
-  "warmth": integer 1, 2, or 3 where 1=light, 2=medium, 3=warm,
-  "style": array of one or more of ["casual","formal","sport","evening","business","weekend"],
-  "name": short descriptive name like "White linen shirt" or "Black slim jeans"
-}
+Identify EVERY distinct clothing item visible in the photo (e.g. shirt, jeans, jacket, shoes, bag, etc.).
+
+Return ONLY a valid JSON array — no markdown, no explanation:
+[
+  {
+    "category": one of ["tops","bottoms","shoes","outerwear","accessories","dresses"],
+    "color": one of ["black","white","navy","grey","beige","brown","green","blue","red","pink"],
+    "season": array of one or more ["spring","summer","autumn","winter","all"],
+    "warmth": integer 1 (light), 2 (medium), or 3 (warm),
+    "style": array of one or more ["casual","formal","sport","evening","business","weekend"],
+    "name": short name like "White linen shirt"
+  }
+]
 
 Rules:
-- Choose the CLOSEST color from the list even if not exact
-- warmth 1 = t-shirts/light fabrics, warmth 2 = medium layers/jeans, warmth 3 = coats/heavy knits
-- If you cannot analyze the image, still return valid JSON with your best guess`;
+- Return an array even if only one item is visible
+- Include every item you can clearly identify
+- Choose the closest color from the list
+- warmth 1 = light fabrics, warmth 2 = denim/knit layers, warmth 3 = coats/heavy knits
+- If unsure about an item, make your best guess — do not skip it`;
 
     try {
-      const response = await fetch(CONFIG.GROQ_API_URL, {
+      const response = await window.fetch(CONFIG.GROQ_API_URL, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${CONFIG.GROQ_API_KEY}`,
@@ -45,54 +53,64 @@ Rules:
             {
               role: "user",
               content: [
-                { type: "text",       text: prompt },
-                { type: "image_url",  image_url: { url: base64Image } },
+                { type: "text",      text: prompt },
+                { type: "image_url", image_url: { url: base64Image } },
               ],
             },
           ],
-          max_tokens: 300,
-          temperature: 0.1, // low temp = consistent structured output
+          max_tokens:  600,
+          temperature: 0.1,
         }),
       });
 
       if (!response.ok) {
         const err = await response.text();
-        console.error("Groq Vision error:", err);
-        return _mockResult();
+        console.error("Groq Vision error:", response.status, err);
+        return [_mockItem()];
       }
 
       const data   = await response.json();
       const text   = data.choices?.[0]?.message?.content || "";
-      const parsed = _parseJSON(text);
+      const parsed = _parseArray(text);
 
-      return parsed || _mockResult();
+      return (parsed && parsed.length) ? parsed : [_mockItem()];
 
     } catch (err) {
       console.error("Recognition failed:", err);
-      return _mockResult();
+      return [_mockItem()];
     }
   }
 
-  // Safely extract JSON from the model's response
-  function _parseJSON(text) {
+  // Safely extract a JSON array from the model's response
+  function _parseArray(text) {
     try {
-      // Model sometimes wraps in ```json ... ```
       const clean = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       const data  = JSON.parse(clean);
 
-      // Validate required fields exist
-      const valid =
-        data.category && data.color && Array.isArray(data.season) &&
-        data.warmth   && Array.isArray(data.style);
+      if (!Array.isArray(data)) return null;
 
-      return valid ? data : null;
+      // Validate and sanitize each item
+      return data
+        .map(item => ({
+          category: _validate(item.category, ["tops","bottoms","shoes","outerwear","accessories","dresses"], "tops"),
+          color:    _validate(item.color,    ["black","white","navy","grey","beige","brown","green","blue","red","pink"], "black"),
+          season:   Array.isArray(item.season) ? item.season : ["all"],
+          warmth:   Number(item.warmth) || 1,
+          style:    Array.isArray(item.style)  ? item.style  : ["casual"],
+          name:     item.name || "",
+        }))
+        .filter(item => item.category); // remove malformed entries
+
     } catch {
       return null;
     }
   }
 
-  // Fallback when no API key or network error
-  function _mockResult() {
+  function _validate(value, allowed, fallback) {
+    return allowed.includes(value) ? value : fallback;
+  }
+
+  function _mockItem() {
     return {
       category: "tops",
       color:    "black",
@@ -103,5 +121,55 @@ Rules:
     };
   }
 
-  return { analyze };
+  /**
+   * Generate a product icon URL for a clothing item using Pollinations.ai.
+   * Returns a URL immediately — the browser fetches/generates the image lazily.
+   * No API key required.
+   * @param {Object} item — wardrobe item with category, color, name, style, warmth
+   * @returns {string} image URL
+   */
+  /**
+   * Generate a product icon URL for a clothing item.
+   * Uses Unsplash Source — real photos, instant, no API key.
+   * The seed is deterministic so the same item always gets the same photo.
+   */
+  function generateIcon(item) {
+    // Map our categories/colors to accurate Unsplash search keywords
+    const categoryKeywords = {
+      tops:        "shirt tshirt top clothing",
+      bottoms:     "pants jeans trousers clothing",
+      shoes:       "shoes sneakers footwear",
+      outerwear:   "jacket coat outerwear clothing",
+      accessories: "fashion accessory bag",
+      dresses:     "dress clothing fashion",
+    };
+
+    const colorKeywords = {
+      black: "black", white: "white", navy: "navy blue",
+      grey: "grey", beige: "beige", brown: "brown",
+      green: "green", blue: "blue", red: "red", pink: "pink",
+    };
+
+    const category = categoryKeywords[item.category] || "clothing fashion";
+    const color    = colorKeywords[item.color]        || item.color;
+    const query    = encodeURIComponent(`${color} ${category}`);
+
+    // Deterministic seed → same item always gets same photo
+    const seed = _hashStr(`${item.color}_${item.category}_${item.name || ""}`);
+
+    // Unsplash Source API — 400x400, specific query, deterministic result
+    return `https://source.unsplash.com/400x400/?${query}&sig=${seed}`;
+  }
+
+  // Deterministic hash → consistent seed per item
+  function _hashStr(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) % 9999;
+  }
+
+  return { analyzeMultiple, generateIcon };
 })();

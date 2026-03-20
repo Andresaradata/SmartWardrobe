@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Smart Wardrobe</title>
+  <meta name="description" content="Your AI-powered wardrobe assistant." />
+  <meta name="theme-color" content="#6c47ff" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       SPLASH SCREEN
+  ═══════════════════════════════════════════ -->
+  <div id="splash" class="splash">
+    <div class="splash-content">
+      <div class="splash-logo">
+        <div class="logo-icon">👗</div>
+        <h1 class="splash-title">Smart Wardrobe</h1>
+        <p class="splash-sub">Your AI style assistant</p>
+      </div>
+      <div class="splash-loader">
+        <div class="loader-bar"><div class="loader-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       ONBOARDING (shown only on first visit)
+  ═══════════════════════════════════════════ -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="onboarding-progress">
+      <div class="onboarding-progress-fill" id="onboardingProgress" style="width:0%"></div>
+    </div>
+
+    <!-- Step content is injected by app.js -->
+    <div id="onboardingStep" class="onboarding-step"></div>
+
+    <div class="onboarding-nav">
+      <button class="btn-ghost" id="onboardingBack" style="flex:1">Back</button>
+      <button class="btn-primary" id="onboardingNext" style="margin-top:0;flex:2">Continue</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN APP SHELL
+  ═══════════════════════════════════════════ -->
+  <div id="app" class="app hidden">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <span class="header-logo">👗</span>
+        <span class="header-title">Smart Wardrobe</span>
+      </div>
+      <div class="header-right">
+        <div class="weather-badge" id="weatherBadge">
+          <span id="weatherIcon">—</span>
+          <span id="weatherTemp">--°C</span>
+        </div>
+        <button class="avatar-btn" id="avatarBtn">O</button>
+      </div>
+    </header>
+
+    <!-- Screen content area -->
+    <main class="app-main" id="mainContent"></main>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="dashboard" id="nav-dashboard">
+        <i data-lucide="home"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-btn" data-screen="wardrobe" id="nav-wardrobe">
+        <i data-lucide="shirt"></i>
+        <span>Wardrobe</span>
+      </button>
+      <button class="nav-btn nav-add" id="nav-add" title="Add item">
+        <i data-lucide="plus"></i>
+      </button>
+      <button class="nav-btn" data-screen="outfits" id="nav-outfits">
+        <i data-lucide="sparkles"></i>
+        <span>Outfits</span>
+      </button>
+      <button class="nav-btn" data-screen="assistant" id="nav-assistant">
+        <i data-lucide="message-circle"></i>
+        <span>Ask AI</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       ADD ITEM MODAL (bottom sheet)
+  ═══════════════════════════════════════════ -->
+  <div id="addModal" class="modal hidden">
+    <div class="modal-backdrop" id="addModalBackdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">Add Clothing Item</h2>
+
+      <!-- Photo Upload -->
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-content" id="uploadContent">
+          <span class="upload-icon">📸</span>
+          <p>Tap to upload photo</p>
+          <span class="upload-sub">or choose from gallery</span>
+        </div>
+        <!-- Detecting overlay (shown while AI runs) -->
+        <div class="detecting-overlay hidden" id="detectingOverlay">
+          <div class="detecting-spinner"></div>
+          <span class="detecting-text">AI is analyzing your item...</span>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" class="hidden" />
+      </div>
+
+      <!-- Form fields (pre-filled by AI, all editable) -->
+      <div class="form-grid" id="itemForm">
+
+        <!-- Category -->
+        <div class="form-group">
+          <label>Category <span class="ai-badge">✦ AI</span></label>
+          <div class="select-grid" id="categorySelect">
+            <button class="sel-btn active" data-val="tops">👕 Tops</button>
+            <button class="sel-btn" data-val="bottoms">👖 Bottoms</button>
+            <button class="sel-btn" data-val="shoes">👟 Shoes</button>
+            <button class="sel-btn" data-val="outerwear">🧥 Outerwear</button>
+            <button class="sel-btn" data-val="accessories">💍 Accessories</button>
+            <button class="sel-btn" data-val="dresses">👗 Dresses</button>
+          </div>
+        </div>
+
+        <!-- Color -->
+        <div class="form-group">
+          <label>Primary Color <span class="ai-badge">✦ AI</span></label>
+          <div class="color-grid" id="colorSelect">
+            <button class="color-btn active" data-val="black"  style="background:#111"></button>
+            <button class="color-btn" data-val="white"  style="background:#fff;border:2px solid #ddd"></button>
+            <button class="color-btn" data-val="navy"   style="background:#1a2e5a"></button>
+            <button class="color-btn" data-val="grey"   style="background:#888"></button>
+            <button class="color-btn" data-val="beige"  style="background:#d4b896"></button>
+            <button class="color-btn" data-val="brown"  style="background:#7b4f2e"></button>
+            <button class="color-btn" data-val="green"  style="background:#2d6a4f"></button>
+            <button class="color-btn" data-val="blue"   style="background:#2563eb"></button>
+            <button class="color-btn" data-val="red"    style="background:#dc2626"></button>
+            <button class="color-btn" data-val="pink"   style="background:#ec4899"></button>
+          </div>
+        </div>
+
+        <!-- Season -->
+        <div class="form-group">
+          <label>Season <span class="ai-badge">✦ AI</span></label>
+          <div class="select-grid" id="seasonSelect">
+            <button class="sel-btn" data-val="spring">🌸 Spring</button>
+            <button class="sel-btn" data-val="summer">☀️ Summer</button>
+            <button class="sel-btn active" data-val="autumn">🍂 Autumn</button>
+            <button class="sel-btn" data-val="winter">❄️ Winter</button>
+            <button class="sel-btn active" data-val="all" style="grid-column:span 2">🌍 All seasons</button>
+          </div>
+        </div>
+
+        <!-- Warmth -->
+        <div class="form-group">
+          <label>Warmth Level <span class="ai-badge">✦ AI</span></label>
+          <div class="warmth-options" id="warmthSelect">
+            <button class="warmth-btn active" data-val="1">
+              <span class="warmth-icon">🌬️</span> Light
+            </button>
+            <button class="warmth-btn" data-val="2">
+              <span class="warmth-icon">🧣</span> Medium
+            </button>
+            <button class="warmth-btn" data-val="3">
+              <span class="warmth-icon">🔥</span> Warm
+            </button>
+          </div>
+        </div>
+
+        <!-- Style Tags -->
+        <div class="form-group">
+          <label>Style Tags <span class="ai-badge">✦ AI</span></label>
+          <div class="tag-grid" id="tagSelect">
+            <button class="tag-btn" data-val="casual">Casual</button>
+            <button class="tag-btn" data-val="formal">Formal</button>
+            <button class="tag-btn" data-val="sport">Sport</button>
+            <button class="tag-btn" data-val="evening">Evening</button>
+            <button class="tag-btn" data-val="business">Business</button>
+            <button class="tag-btn" data-val="weekend">Weekend</button>
+          </div>
+        </div>
+
+        <!-- Divider: manual fields -->
+        <div style="border-top:1px solid var(--clr-border);padding-top:var(--sp-2)">
+          <p style="font-size:var(--text-xs);color:var(--clr-text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:var(--sp-4)">Enter manually</p>
+
+          <!-- Item Name -->
+          <div class="form-group">
+            <label>Item Name <span class="optional">(optional)</span></label>
+            <input type="text" id="itemName" class="text-input" placeholder="e.g. White linen shirt" />
+          </div>
+
+          <!-- Brand -->
+          <div class="form-group" style="margin-top:var(--sp-4)">
+            <label>Brand <span class="optional">(optional)</span></label>
+            <input type="text" id="itemBrand" class="text-input" placeholder="e.g. Zara, H&M, Uniqlo..." />
+          </div>
+
+          <!-- Times Worn -->
+          <div class="form-group" style="margin-top:var(--sp-4)">
+            <label>Times Worn <span class="optional">(optional)</span></label>
+            <input type="number" id="itemTimesWorn" class="number-input" placeholder="0" min="0" />
+          </div>
+
+          <!-- Last Worn -->
+          <div class="form-group" style="margin-top:var(--sp-4)">
+            <label>Last Worn <span class="optional">(optional)</span></label>
+            <input type="date" id="itemLastWorn" class="text-input" />
+          </div>
+        </div>
+
+      </div><!-- /form-grid -->
+
+      <button class="btn-primary" id="saveItemBtn">
+        <i data-lucide="check"></i>
+        Save to Wardrobe
+      </button>
+      <button class="btn-ghost" id="cancelAddBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       ITEM DETAIL MODAL
+  ═══════════════════════════════════════════ -->
+  <div id="itemDetailModal" class="modal hidden">
+    <div class="modal-backdrop" id="itemDetailBackdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div id="itemDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS (order matters)
+  ═══════════════════════════════════════════ -->
+  <script src="config.js"></script>
+  <script src="scripts/wardrobe.js"></script>
+  <script src="scripts/weather.js"></script>
+  <script src="scripts/outfits.js"></script>
+  <script src="scripts/recognition.js"></script>
+  <script src="scripts/assistant.js"></script>
+  <script src="scripts/app.js"></script>
+
+</body>
+</html>

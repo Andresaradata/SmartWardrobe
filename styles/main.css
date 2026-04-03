@@ -1014,6 +1014,17 @@ input, textarea {
   transition: background 0.2s;
 }
 
+.dup-warning {
+  background: #fff8e1;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-sm);
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: var(--sp-2);
+}
+
 .btn-ghost:hover {
   background: var(--clr-surface-2);
 }

@@ -986,6 +986,7 @@ function openAddModal() {
 }
 
 function closeAddModal() {
+  _resetDupState();
   document.getElementById("addModal").classList.add("hidden");
 }
 
@@ -1040,6 +1041,10 @@ function _setupAddModal() {
   _setupSelectionGrid("colorSelect",    false);
   _setupSelectionGrid("seasonSelect",   true);
   _setupSelectionGrid("warmthSelect",   false);
+
+  // Reset duplicate warning if user changes category or color
+  document.getElementById("categorySelect").addEventListener("click", _resetDupState);
+  document.getElementById("colorSelect").addEventListener("click", _resetDupState);
   _setupTagGrid();
 }
 
@@ -1278,6 +1283,21 @@ function _saveSingleItem() {
   if (!color)    { showToast("Please select a color",    "error"); return; }
   if (!season.length) { showToast("Please select at least one season", "error"); return; }
 
+  // Duplicate check — warn on first click, allow on second ("Save Anyway")
+  const saveBtn = document.getElementById("saveItemBtn");
+  if (!saveBtn.dataset.confirmed) {
+    const dupes = wardrobe.getAll().filter(i => i.category === category && i.color === color);
+    if (dupes.length > 0) {
+      _showDupWarning(dupes, color, category);
+      saveBtn.dataset.confirmed = "1";
+      saveBtn.innerHTML = '<i data-lucide="alert-triangle"></i> Save Anyway';
+      lucide.createIcons();
+      return;
+    }
+  }
+
+  _resetDupState();
+
   const item = wardrobe.add({
     name:      document.getElementById("itemName").value.trim(),
     brand:     document.getElementById("itemBrand").value.trim(),
@@ -1292,6 +1312,30 @@ function _saveSingleItem() {
 
   if (currentScreen === "wardrobe")  navigateTo("wardrobe");
   if (currentScreen === "dashboard") navigateTo("dashboard");
+}
+
+function _showDupWarning(dupes, color, category) {
+  let warn = document.getElementById("dupWarning");
+  if (!warn) {
+    warn = document.createElement("div");
+    warn.id = "dupWarning";
+    warn.className = "dup-warning";
+    const saveBtn = document.getElementById("saveItemBtn");
+    saveBtn.parentNode.insertBefore(warn, saveBtn);
+  }
+  const names = dupes.slice(0, 2).map(d => d.name || `${d.color} ${d.category}`).join(", ");
+  const extra = dupes.length > 2 ? ` +${dupes.length - 2} more` : "";
+  warn.innerHTML = `⚠️ You already own <strong>${dupes.length}</strong> similar item${dupes.length > 1 ? "s" : ""} (${names}${extra}). Still want to add another?`;
+}
+
+function _resetDupState() {
+  const saveBtn = document.getElementById("saveItemBtn");
+  if (saveBtn && saveBtn.dataset.confirmed) {
+    delete saveBtn.dataset.confirmed;
+    saveBtn.innerHTML = '<i data-lucide="check"></i> Save to Wardrobe';
+    lucide.createIcons();
+  }
+  document.getElementById("dupWarning")?.remove();
 }
 
 // ══════════════════════════════════════════════════

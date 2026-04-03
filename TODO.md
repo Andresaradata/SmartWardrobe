@@ -28,14 +28,13 @@
 
 ### AI Assistant Improvements
 
-- [ ] **Structured "Should I buy?" response**
-  - Add hard duplicate-check logic in `assistant.js` before sending to Groq
-  - Inject duplicate count + compatible outfit count into the system prompt as facts
-  - Response should always follow: duplicate warning → compatibility → verdict
+- [x] **Structured "Should I buy?" response**
+  - Hard duplicate-check logic in `assistant.js` before sending to Groq
+  - Duplicate count + compatible outfit count injected into system prompt as facts
+  - Response always follows: duplicate warning → compatibility → verdict
 
-- [ ] **Friendly API error fallback**
-  - Current: raw error string shown in chat
-  - Fix: catch API errors and show "I'm having trouble connecting, but here's my best advice…" + mock reply
+- [x] **Friendly API error fallback**
+  - Catches API errors and shows "I'm having a moment — here's my best advice anyway:" + mock reply
 
 - [ ] **Weather QA**
   - Confirm live weather pulls correctly in header badge
@@ -51,9 +50,9 @@
 
 ## PRIORITY 2 — Ship if time allows
 
-- [ ] **Duplicate detection on upload**
-  - When a new item is digitized, scan existing wardrobe for similar category + color
-  - Warn user before saving: "You already have 2 black bottoms — are you sure?"
+- [x] **Duplicate detection on upload**
+  - When saving a new item, scans wardrobe for same category + color
+  - Shows amber warning banner + changes button to "Save Anyway" on first click; second click saves
 
 - [ ] **Outfit compatibility count for "Should I buy?"**
   - When advising on a purchase, calculate how many existing outfits the item slots into

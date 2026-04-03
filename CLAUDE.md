@@ -36,6 +36,8 @@ A front-end browser prototype for a Smart Wardrobe concept. Built for a MIBA Pro
 ```
 SmartWardrobe/
 ├── CLAUDE.md               ← you are here
+├── TODO.md                 ← master task list (keep updated)
+├── config.js               ← API keys — blank key committed, add real key locally only
 ├── index.html              ← app shell + all screen templates
 ├── styles/
 │   └── main.css            ← design system + all component styles
@@ -44,7 +46,8 @@ SmartWardrobe/
 │   ├── wardrobe.js         ← wardrobe data, CRUD, localStorage
 │   ├── outfits.js          ← outfit generation engine (rule-based)
 │   ├── weather.js          ← weather fetching + context rules
-│   └── assistant.js        ← AI chat logic (wardrobe-aware responses)
+│   ├── assistant.js        ← AI chat logic (wardrobe-aware responses)
+│   └── recognition.js      ← clothing photo recognition via Groq Vision
 └── Smart Wardrobe.docx     ← original project document (keep, do not delete)
 ```
 
@@ -68,16 +71,17 @@ SmartWardrobe/
 - [x] Folder cleaned up
 - [x] Git initialized and connected to GitHub
 - [x] CLAUDE.md created
-- [ ] index.html
-- [ ] styles/main.css
-- [ ] scripts/wardrobe.js
-- [ ] scripts/weather.js
-- [ ] scripts/outfits.js
-- [ ] scripts/assistant.js
-- [ ] scripts/app.js
-- [ ] Pre-load demo data
-- [ ] Test full flow in browser
-- [ ] Push to GitHub
+- [x] index.html
+- [x] styles/main.css
+- [x] scripts/wardrobe.js
+- [x] scripts/weather.js
+- [x] scripts/outfits.js
+- [x] scripts/assistant.js
+- [x] scripts/app.js
+- [x] scripts/recognition.js
+- [x] Pre-load demo data
+- [x] Push to GitHub
+- [x] Deployed on GitHub Pages → https://omla903.github.io/SmartWardrobe/
 
 ## What "Good" Looks Like
 - Feels like a real mobile app (not a webpage)

@@ -1,89 +1,115 @@
-# Smart Wardrobe — What's Left
+# Smart Wardrobe — Master Task List
 
-> Last updated: March 2026
-> Week 1 is complete. Below is everything remaining for Week 2 and Week 3.
+> Last updated: April 2026
+> Deployment: https://omla903.github.io/SmartWardrobe/
 
 ---
 
-## Week 2 — Outfit Generator + Weather ⛅
+## PRIORITY 1 — Must ship before demo
 
-### Must do
-- [ ] **QA the outfit generator end-to-end**
-  - Does changing occasion (casual / formal / sport) actually produce different outfits?
-  - Does cold weather trigger outerwear suggestions?
-  - Does warm weather suppress heavy items?
+### Demo Scenarios (all 3 must work end-to-end, no friction)
+
+- [ ] **Scenario 1 — Digitizing Clothes**
+  - Upload a photo → Groq Vision detects type, color, season, warmth
+  - User confirms attributes → item saved to wardrobe
+  - QA: does it work with different clothing types? Does it fail gracefully if Vision API is slow?
+
+- [ ] **Scenario 2 — Outfit Recommendation**
+  - User picks one anchor item ("I want to wear my navy sweater")
+  - System builds a full outfit around it, adapted to live weather
+  - QA: does changing occasion (casual / formal / sport) produce different outfits?
+  - QA: does cold weather trigger outerwear? Does warm weather suppress heavy items?
+
+- [ ] **Scenario 3 — Shopping Advice**
+  - User asks "Should I buy black jeans?" in chat
+  - AI checks wardrobe for duplicates (hard logic, not just LLM guessing)
+  - AI gives structured advice: duplicate warning + how many existing outfits it fits into
+  - QA: test with items the user has vs. items they don't
+
+### AI Assistant Improvements
+
+- [ ] **Structured "Should I buy?" response**
+  - Add hard duplicate-check logic in `assistant.js` before sending to Groq
+  - Inject duplicate count + compatible outfit count into the system prompt as facts
+  - Response should always follow: duplicate warning → compatibility → verdict
+
+- [ ] **Friendly API error fallback**
+  - Current: raw error string shown in chat
+  - Fix: catch API errors and show "I'm having trouble connecting, but here's my best advice…" + mock reply
+
+- [ ] **Weather QA**
+  - Confirm live weather pulls correctly in header badge
+  - Test IP fallback when location is denied — should show a city name, not crash
+
+### Deployment
+
+- [x] App live on GitHub Pages → https://omla903.github.io/SmartWardrobe/
+- [ ] Verify all features work on the live URL (not just localhost)
+- [ ] Test on the presentation device (not just your laptop)
+
+---
+
+## PRIORITY 2 — Ship if time allows
+
+- [ ] **Duplicate detection on upload**
+  - When a new item is digitized, scan existing wardrobe for similar category + color
+  - Warn user before saving: "You already have 2 black bottoms — are you sure?"
+
+- [ ] **Outfit compatibility count for "Should I buy?"**
+  - When advising on a purchase, calculate how many existing outfits the item slots into
+  - Surface this as a number: "This would work in ~4 outfits you can already build"
 
 - [ ] **Sensor simulation panel**
-  - The professor brief specifically mentions "sensor inputs" — we need to simulate this
-  - Ideas: a small dashboard panel showing "wardrobe sensors" (humidity, temperature inside wardrobe, item last detected)
-  - Could be a card on the dashboard or a dedicated screen
+  - Dashboard card showing simulated wardrobe sensors: humidity, temperature, last item detected
+  - Required by professor brief ("sensor inputs") — even if simulated
 
 - [ ] **Outfit planner — weekly view**
-  - Let the user plan outfits for each day of the upcoming week
-  - Simple: 7 day slots, tap a slot → generate or pick an outfit → save it
+  - 7 day slots on a screen, tap a slot → generate or pick an outfit → save it
   - Show the week plan on the dashboard
 
 - [ ] **Saved looks**
-  - After generating an outfit, user can "save" it as a named look
-  - Saved looks appear in the Outfits tab alongside generated ones
+  - After generating an outfit, user can tap "Save" and give it a name
+  - Saved looks appear in the Outfits tab
 
-- [ ] **Weather QA**
-  - Test that live weather is pulling correctly (check the badge in the header)
-  - If location is denied, confirm IP fallback works and shows a city
-
----
-
-## Week 3 — Personalization + AI Chat 🤖
-
-### Must do
 - [ ] **Connect onboarding answers to outfit logic**
-  - If user said "business" style → outfit generator should default to business occasion
-  - If user said "neutral colors" → prioritize black/white/grey/navy in outfit picks
-  - Currently the quiz answers are saved but not used anywhere
-
-- [ ] **AI chat — test all 3 professor scenarios**
-  - Scenario 1: "What should I wear today?" → outfit suggestion referencing real wardrobe items
-  - Scenario 2: "I want to wear my navy sweater" → full outfit built around that piece
-  - Scenario 3: "Should I buy black jeans?" → checks wardrobe for duplicates, gives advice
-  - Each of these must work smoothly on demo day
-
-- [ ] **Shopping advice flow**
-  - Make the "Should I buy X?" scenario feel more structured in the chat
-  - Assistant should clearly say: "You already have Y similar items" or "This would pair well with X, Y, Z in your wardrobe"
-
-- [ ] **Style profile — use real data**
-  - Profile screen exists but "Omar" is hardcoded
-  - Pull the user's name from onboarding (or add a name field there)
-  - Make sustainability score more meaningful — show which items haven't been worn in 30+ days with a nudge
-
-- [ ] **Wardrobe display view (stretch goal)**
-  - The professor mentioned "a display" on the wardrobe itself
-  - A second full-screen view (TV/tablet mode) showing today's outfit suggestion
-  - Could be triggered from the dashboard with a "Show on display" button
+  - If user selected "business" style → outfit generator defaults to business occasion
+  - If user selected "neutral colors" → prioritize black/white/grey/navy in picks
+  - Quiz answers are already saved in localStorage — just need to wire them up
 
 ---
 
-## Demo Prep 🎯
+## PRIORITY 3 — Only if everything else is 100% done
 
-- [ ] **Run through all 3 scenarios back to back** — time it, should be under 5 minutes total
-- [ ] **Clear localStorage before the demo** — start fresh so onboarding shows
-- [ ] **Pre-add 3–4 real clothing photos** before the live demo (avoids waiting for AI detection live)
-- [ ] **Prepare a fallback** — if Groq API is slow, have a screenshot/recording ready
-- [ ] **Test on the presentation device** — not just your laptop
+- [ ] **Style profile — real data**
+  - Pull user's name from onboarding (currently hardcoded as "Omar")
+  - Sustainability score: show which items haven't been worn in 30+ days with a nudge
+
+- [ ] **Wardrobe display view**
+  - Full-screen TV/tablet mode showing today's outfit
+  - Triggered by "Show on display" button on dashboard
+
+- [ ] **Language option** (French / English toggle)
+
+- [ ] **Dataset of clothes / similar items** (for smarter recommendations)
+
+- [ ] **Sustainability ranking** (rank items by wear frequency, flag unused ones)
+
+- [ ] ~~**3D avatar**~~ — out of scope, do not attempt
+
+---
+
+## Demo Prep Checklist 🎯
+
+- [ ] Run through all 3 scenarios back to back — time it, target under 5 minutes
+- [ ] Clear localStorage before the demo — start fresh so onboarding shows
+- [ ] Pre-add 3–4 real clothing photos before the live demo (skip waiting for AI live)
+- [ ] Prepare a fallback — if Groq API is slow, have a screenshot/recording ready
+- [ ] Test on the presentation device
 
 ---
 
 ## Known Issues 🐛
 
-- [ ] Wardrobe items from multi-photo detection all share the same category icon (expected — no bounding boxes available)
-- [ ] Chat history resets on page refresh (by design — no backend)
-- [ ] If Groq API is unavailable, chat shows a raw error message (should be a friendlier fallback)
-
----
-
-## How to contribute
-
-1. Pull the latest: `git pull origin main`
-2. Create your `config.js` locally (see README — never commit this)
-3. Run: `python3 -m http.server 8181` → open `http://localhost:8181`
-4. Pick a task above, build it, push to a branch, let the team know
+- [ ] Groq API error shows raw error string in chat (fix is Priority 1)
+- [ ] Chat history resets on page refresh (by design — no backend, acceptable)
+- [ ] Multi-photo detection items share the same category icon (no bounding boxes available — acceptable)

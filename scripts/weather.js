@@ -152,8 +152,8 @@ const Weather = (() => {
       return { latitude: json.latitude, longitude: json.longitude, city: json.city };
     } catch (err) {
       console.warn("IP geolocation failed:", err.message);
-      // Last resort: default to Paris
-      return { latitude: 48.8566, longitude: 2.3522, city: "Paris" };
+      // Last resort: default to Barcelona
+      return { latitude: 41.3851, longitude: 2.1734, city: "Barcelona" };
     }
   }
 

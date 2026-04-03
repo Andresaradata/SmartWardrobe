@@ -59,9 +59,8 @@
   - When advising on a purchase, calculate how many existing outfits the item slots into
   - Surface this as a number: "This would work in ~4 outfits you can already build"
 
-- [ ] **Sensor simulation panel**
-  - Dashboard card showing simulated wardrobe sensors: humidity, temperature, last item detected
-  - Required by professor brief ("sensor inputs") — even if simulated
+- [x] **Sensor simulation panel**
+  - Dashboard card showing simulated humidity + temperature with live-updating values and fabric care status
 
 - [ ] **Outfit planner — weekly view**
   - 7 day slots on a screen, tap a slot → generate or pick an outfit → save it

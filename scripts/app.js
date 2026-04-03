@@ -264,6 +264,58 @@ function _wireScreen(screen) {
     case "outfits":   _wireOutfits();   break;
     case "assistant": _wireAssistant(); break;
     case "profile":   _wireProfile();   break;
+    case "dashboard": _startSensors();  break;
+  }
+}
+
+// ── Sensor Simulation ──────────────────────────────
+let _sensorInterval = null;
+let _sensorHumidity = 45 + Math.random() * 10; // start in ideal range
+let _sensorTemp     = 16 + Math.random() * 4;  // start in ideal range
+
+function _startSensors() {
+  _updateSensorDisplay();
+  clearInterval(_sensorInterval);
+  _sensorInterval = setInterval(() => {
+    // Drift slightly each tick — feels like a real sensor
+    _sensorHumidity = Math.min(80, Math.max(20, _sensorHumidity + (Math.random() - 0.5) * 1.5));
+    _sensorTemp     = Math.min(28, Math.max(10, _sensorTemp     + (Math.random() - 0.5) * 0.5));
+    _updateSensorDisplay();
+  }, 3000);
+}
+
+function _updateSensorDisplay() {
+  const hEl  = document.getElementById("sensorHumidity");
+  const hSt  = document.getElementById("sensorHumidityStatus");
+  const tEl  = document.getElementById("sensorTemp");
+  const tSt  = document.getElementById("sensorTempStatus");
+  if (!hEl) { clearInterval(_sensorInterval); return; } // navigated away
+
+  const h = Math.round(_sensorHumidity);
+  const t = Math.round(_sensorTemp * 10) / 10;
+
+  hEl.textContent = `${h}%`;
+  if (h < 40) {
+    hSt.textContent  = "Too dry — fibres may weaken";
+    hSt.className    = "sensor-status warn";
+  } else if (h > 60) {
+    hSt.textContent  = "Too damp — mould risk";
+    hSt.className    = "sensor-status warn";
+  } else {
+    hSt.textContent  = "Good — ideal for fabrics";
+    hSt.className    = "sensor-status ok";
+  }
+
+  tEl.textContent = `${t}°C`;
+  if (t < 15) {
+    tSt.textContent = "A bit cold — check wool items";
+    tSt.className   = "sensor-status warn";
+  } else if (t > 22) {
+    tSt.textContent = "Too warm — avoid direct sun";
+    tSt.className   = "sensor-status warn";
+  } else {
+    tSt.textContent = "Good — clothes safe";
+    tSt.className   = "sensor-status ok";
   }
 }
 
@@ -364,6 +416,31 @@ function _renderDashboard() {
           </div>
         </div>
       ` : ""}
+
+      <!-- Wardrobe Sensors -->
+      <div class="section-header" style="margin-top:var(--sp-6)">
+        <span class="section-title">Wardrobe Sensors 🌡️</span>
+        <span class="sensor-live-dot"></span>
+      </div>
+      <div class="sensor-card">
+        <div class="sensor-item">
+          <div class="sensor-icon">💧</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Humidity</div>
+            <div class="sensor-value" id="sensorHumidity">--%</div>
+            <div class="sensor-status" id="sensorHumidityStatus">—</div>
+          </div>
+        </div>
+        <div class="sensor-divider"></div>
+        <div class="sensor-item">
+          <div class="sensor-icon">🌡️</div>
+          <div class="sensor-info">
+            <div class="sensor-label">Temperature</div>
+            <div class="sensor-value" id="sensorTemp">--°C</div>
+            <div class="sensor-status" id="sensorTempStatus">—</div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }

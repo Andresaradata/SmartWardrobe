@@ -16,7 +16,8 @@ const Assistant = (() => {
       return _mockReply(userMessage);
     }
 
-    const systemPrompt = _buildSystemPrompt();
+    const purchaseAnalysis = _analyzePurchaseQuery(userMessage);
+    const systemPrompt = _buildSystemPrompt(purchaseAnalysis);
 
     // Keep history to last 10 turns to avoid token overflow
     const recentHistory = [..._history.slice(-9), { role: "user", content: userMessage }];
@@ -61,7 +62,7 @@ const Assistant = (() => {
   }
 
   // Build context-rich system prompt
-  function _buildSystemPrompt() {
+  function _buildSystemPrompt(purchaseAnalysis) {
     const items      = wardrobe.getAll();
     const stats      = wardrobe.getStats();
     const weatherCtx = Weather.getCurrent();
@@ -75,6 +76,25 @@ const Assistant = (() => {
       ? `Current weather: ${weatherCtx.temp}°C, ${weatherCtx.description}. ${weatherCtx.summary}.`
       : "Weather data unavailable.";
 
+    // Inject pre-computed purchase facts when relevant
+    let purchaseSection = "";
+    if (purchaseAnalysis) {
+      const { color, category, duplicates, compatibleCount } = purchaseAnalysis;
+      const itemLabel = [color, category].filter(Boolean).join(" ") || "this item";
+      const dupNames  = duplicates.map(d => d.name || d.category).join(", ") || "none";
+      purchaseSection = `
+PURCHASE ANALYSIS — pre-computed facts, use these exactly, do not guess:
+- Item being considered: ${itemLabel}
+- Exact duplicates already in wardrobe: ${duplicates.length} (${dupNames})
+- Existing items it pairs well with: ${compatibleCount}
+- Duplicate verdict: ${duplicates.length > 0 ? "DUPLICATE — user already owns something very similar" : "No exact duplicate found"}
+
+REQUIRED RESPONSE FORMAT for shopping advice:
+1. Duplicate check — state the exact number found
+2. Compatibility — state how many existing items it pairs with
+3. Clear verdict — buy / skip / maybe, with one-line reason`;
+    }
+
     return `You are a personal AI wardrobe assistant called Wardi. You are friendly, concise, and fashion-savvy.
 
 USER'S WARDROBE (${items.length} items):
@@ -86,7 +106,7 @@ WARDROBE STATS:
 - Sustainability score: ${stats.sustainScore}%
 
 ${weatherLine}
-
+${purchaseSection}
 YOUR CAPABILITIES:
 1. Suggest outfits using items from their wardrobe
 2. Advise on new purchases (check for duplicates, compatibility)
@@ -97,17 +117,98 @@ YOUR CAPABILITIES:
 RULES:
 - Keep replies short and conversational (2-4 sentences max unless a list is useful)
 - When suggesting outfits, reference specific items from the wardrobe by name
-- When advising on a purchase, explicitly check if something similar already exists
+- When advising on a purchase, use the pre-computed facts above — never guess
 - Be honest: if they have enough of something, say so
 - Never be preachy about sustainability — mention it once, naturally`;
+  }
+
+  // Parse a purchase question to extract color + category, then run hard wardrobe checks
+  function _analyzePurchaseQuery(message) {
+    const lower = message.toLowerCase();
+    const isPurchase = lower.includes("buy") || lower.includes("purchase") ||
+                       lower.includes("get a") || lower.includes("should i get");
+    if (!isPurchase) return null;
+
+    const colorKeywords = ["black","white","navy","grey","gray","beige","brown","green","blue","red","pink"];
+    const rawColor = colorKeywords.find(c => lower.includes(c)) || null;
+    const color    = rawColor === "gray" ? "grey" : rawColor;
+
+    const categoryMap = {
+      bottoms:     ["jeans","trousers","pants","chinos","shorts","skirt","leggings"],
+      tops:        ["shirt","tee","t-shirt","top","sweater","hoodie","blouse","jumper","pullover"],
+      shoes:       ["shoes","sneakers","boots","loafers","heels","trainers"],
+      outerwear:   ["jacket","coat","blazer","parka","puffer"],
+      dresses:     ["dress","gown","jumpsuit"],
+      accessories: ["bag","watch","belt","scarf","hat","cap","sunglasses"],
+    };
+    let category = null;
+    for (const [cat, keywords] of Object.entries(categoryMap)) {
+      if (keywords.some(k => lower.includes(k))) { category = cat; break; }
+    }
+
+    if (!color && !category) return null;
+
+    const duplicates      = _findDuplicates(color, category);
+    const compatibleCount = _countCompatibleItems(color, category);
+
+    return { color, category, duplicates, compatibleCount };
+  }
+
+  // Hard duplicate check: same category + same color
+  function _findDuplicates(color, category) {
+    return wardrobe.getAll().filter(i =>
+      (!category || i.category === category) &&
+      (!color    || i.color    === color)
+    );
+  }
+
+  // Count existing items that color-pair well with the potential new item
+  function _countCompatibleItems(color, category) {
+    if (!color) return 0;
+    const COLOR_COMPAT = {
+      black: ["black","white","grey","navy","beige","brown","red","pink","green","blue"],
+      white: ["black","white","grey","navy","beige","brown","blue","green","pink"],
+      navy:  ["white","grey","beige","brown","navy","black"],
+      grey:  ["black","white","grey","navy","beige","blue","pink"],
+      beige: ["black","navy","brown","white","grey","green"],
+      brown: ["beige","navy","white","grey","black","green"],
+      green: ["beige","brown","white","black","grey"],
+      blue:  ["white","grey","black","navy","beige"],
+      red:   ["black","white","grey","navy"],
+      pink:  ["grey","white","black","navy"],
+    };
+    const complementary = {
+      tops:        ["bottoms","shoes","outerwear"],
+      bottoms:     ["tops","shoes","outerwear"],
+      shoes:       ["tops","bottoms"],
+      outerwear:   ["tops","bottoms"],
+      dresses:     ["shoes","outerwear","accessories"],
+      accessories: ["tops","bottoms","dresses"],
+    };
+    const compat     = COLOR_COMPAT[color] || [];
+    const targetCats = category ? (complementary[category] || []) : [];
+
+    return wardrobe.getAll().filter(i =>
+      compat.includes(i.color) &&
+      (targetCats.length === 0 || targetCats.includes(i.category))
+    ).length;
   }
 
   // Fallback replies when no API key is set
   function _mockReply(message) {
     const lower = message.toLowerCase();
 
-    if (lower.includes("buy") || lower.includes("purchase")) {
-      return "Before buying, check if you already have something similar! Looking at your wardrobe, you have solid basics covered. Make sure the new item can pair with at least 3 things you already own.";
+    if (lower.includes("buy") || lower.includes("purchase") || lower.includes("get a") || lower.includes("should i get")) {
+      const analysis = _analyzePurchaseQuery(message);
+      if (analysis && (analysis.color || analysis.category)) {
+        const itemLabel = [analysis.color, analysis.category].filter(Boolean).join(" ") || "this item";
+        if (analysis.duplicates.length > 0) {
+          const dupName = analysis.duplicates[0].name || analysis.duplicates[0].category;
+          return `Duplicate check: you already own ${analysis.duplicates.length} similar item(s) — including your ${dupName}.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items in your wardrobe.\n\nVerdict: skip it for now. You've got it covered.`;
+        }
+        return `Duplicate check: no exact duplicate found in your wardrobe.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items you already own.\n\nVerdict: ${analysis.compatibleCount >= 3 ? "looks like a solid buy — good compatibility." : "think twice — it doesn't pair with many things you have."}`;
+      }
+      return "Before buying, check if you already have something similar. Make sure the new item can pair with at least 3 things you already own.";
     }
     if (lower.includes("wear") || lower.includes("outfit")) {
       return "Based on your wardrobe, I'd suggest pairing your White Linen Shirt with Black Slim Jeans and White Sneakers — a clean, versatile look that works for most occasions.";

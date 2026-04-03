@@ -604,8 +604,8 @@ function _wireAssistant() {
     // Remove typing indicator
     document.getElementById("typingIndicator")?.remove();
 
-    // AI bubble
-    messages.insertAdjacentHTML("beforeend", `<div class="chat-bubble ai">${_escapeHtml(reply)}</div>`);
+    // AI bubble — escape HTML then convert newlines to <br> for formatting
+    messages.insertAdjacentHTML("beforeend", `<div class="chat-bubble ai">${_escapeHtml(reply).replace(/\n/g, "<br>")}</div>`);
     messages.scrollTop = messages.scrollHeight;
   }
 

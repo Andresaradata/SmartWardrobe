@@ -42,7 +42,7 @@ const Assistant = (() => {
       if (!response.ok) {
         const errText = await response.text();
         console.error("Groq chat error:", response.status, errText);
-        return `AI error (${response.status}): ${errText.slice(0, 120)}`;
+        return `I'm having a moment — here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
       }
 
       const data  = await response.json();
@@ -56,7 +56,7 @@ const Assistant = (() => {
 
     } catch (err) {
       console.error("Assistant fetch error:", err);
-      return `Connection error: ${err.message}. Make sure your Groq API key is set in config.js and you're running via a local server (not file://).`;
+      return `I'm having a moment — here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
     }
   }
 

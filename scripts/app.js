@@ -12,7 +12,7 @@ let styleProfile    = {};
 const ONBOARDING_STEPS = [
   {
     emoji: "👋",
-    title: "Welcome to Smart Wardrobe",
+    title: "Welcome to Garde",
     sub: "Your personal AI style assistant. Let's set up your style profile in a few quick questions.",
     type: "info",
   },
@@ -510,9 +510,17 @@ function _wireWardrobe() {
 }
 
 // ── Looks (Flatlay Builder) ────────────────────────
-let _looksOutfit  = { tops: null, bottoms: null, shoes: null, outerwear: null };
-let _activeSlot   = "tops";
-let _looksOccasion = "casual";
+let _looksOutfit     = { tops: null, bottoms: null, shoes: null, outerwear: null };
+let _activeSlot      = "tops";
+let _looksOccasion   = "casual";
+let _preferredColors = [];
+
+const COLOR_PREF_MAP = {
+  neutral:  ["black", "white", "grey", "beige", "navy"],
+  earthy:   ["brown", "navy", "green", "beige"],
+  colorful: ["red", "pink", "blue", "green"],
+  mixed:    [],
+};
 
 function _getLooks() {
   try { return JSON.parse(localStorage.getItem("savedLooks") || "[]"); } catch { return []; }
@@ -631,8 +639,15 @@ function _flatlaySlotHTML(cat, label) {
 }
 
 function _wireOutfits() {
+  // Wire profile preferences from onboarding
+  const profile = Profile.get();
+  if (profile.baseStyle && _looksOccasion === "casual") {
+    _looksOccasion = profile.baseStyle;
+  }
+  _preferredColors = COLOR_PREF_MAP[profile.colorPref] || [];
+
   // Auto-generate initial outfit
-  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion);
+  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion, _preferredColors);
   if (generated) {
     _looksOutfit = {
       tops:      generated.tops      || null,
@@ -754,7 +769,7 @@ function _refreshFlatlay() {
 }
 
 function _generateNewLook() {
-  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion);
+  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion, _preferredColors);
   if (!generated) { showToast("Add more items to your wardrobe first", "error"); return; }
   _looksOutfit = {
     tops:      generated.tops      || null,

@@ -1,23 +1,23 @@
 /* ═══════════════════════════════════════════════════
-   SMART WARDROBE — Design System
-   Mobile-first. Feels like a native app.
+   GARDE — Design System
+   Dark-first. Editorial. Minimal.
 ═══════════════════════════════════════════════════ */
 
 /* ── 1. CSS Variables ─────────────────────────────── */
 :root {
   /* Brand Colors */
-  --clr-primary:       #6c47ff;
-  --clr-primary-light: #ede9ff;
-  --clr-primary-dark:  #4f2fe0;
+  --clr-primary:       #FB5959;
+  --clr-primary-light: rgba(251,89,89,0.12);
+  --clr-primary-dark:  #e03d3d;
 
-  /* Neutrals */
-  --clr-bg:            #f7f7fb;
-  --clr-surface:       #ffffff;
-  --clr-surface-2:     #f0f0f7;
-  --clr-border:        #e4e4ef;
-  --clr-text:          #0f0e17;
-  --clr-text-2:        #6b6b80;
-  --clr-text-3:        #a0a0b5;
+  /* Neutrals — dark mode */
+  --clr-bg:            #050505;
+  --clr-surface:       #111111;
+  --clr-surface-2:     #1c1c1c;
+  --clr-border:        #2a2a2a;
+  --clr-text:          #ffffff;
+  --clr-text-2:        #888888;
+  --clr-text-3:        #484848;
 
   /* Semantic */
   --clr-success:       #22c55e;
@@ -25,7 +25,7 @@
   --clr-error:         #ef4444;
 
   /* Typography */
-  --font:              'Inter', sans-serif;
+  --font:              'Red Hat Display', sans-serif;
   --text-xs:           0.75rem;
   --text-sm:           0.875rem;
   --text-base:         1rem;
@@ -52,11 +52,11 @@
   --radius-xl:   2rem;
   --radius-full: 999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-  --shadow-primary: 0 4px 20px rgba(108, 71, 255, 0.3);
+  /* Shadows — dark mode */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-primary: 0 4px 20px rgba(251,89,89,0.35);
 
   /* Layout */
   --header-h:  60px;
@@ -109,7 +109,7 @@ input, textarea {
 .splash {
   position: fixed;
   inset: 0;
-  background: linear-gradient(145deg, #1a0a4e 0%, #6c47ff 60%, #a78bfa 100%);
+  background: var(--clr-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,28 +132,21 @@ input, textarea {
   margin-bottom: var(--sp-10);
 }
 
-.logo-icon {
-  font-size: 4rem;
-  margin-bottom: var(--sp-4);
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-10px); }
-}
-
 .splash-title {
-  font-size: var(--text-3xl);
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.5px;
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--clr-text);
+  letter-spacing: -2px;
+  line-height: 1;
 }
 
 .splash-sub {
-  font-size: var(--text-base);
-  color: rgba(255,255,255,0.7);
-  margin-top: var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--clr-text-2);
+  margin-top: var(--sp-3);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .splash-loader {
@@ -219,10 +212,10 @@ input, textarea {
 }
 
 .header-title {
-  font-size: var(--text-lg);
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: 900;
   color: var(--clr-text);
-  letter-spacing: -0.3px;
+  letter-spacing: -1px;
 }
 
 .header-right {
@@ -248,7 +241,7 @@ input, textarea {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
+  background: var(--clr-primary);
   color: #fff;
   font-weight: 700;
   font-size: var(--text-sm);
@@ -315,7 +308,7 @@ input, textarea {
 .nav-add {
   width: 52px;
   height: 52px;
-  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
+  background: var(--clr-primary);
   border-radius: var(--radius-full);
   color: #fff !important;
   box-shadow: var(--shadow-primary);
@@ -382,10 +375,11 @@ input, textarea {
 
 /* Weather Card */
 .weather-card {
-  background: linear-gradient(135deg, #1a0a4e 0%, #6c47ff 100%);
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
   border-radius: var(--radius-lg);
   padding: var(--sp-5);
-  color: #fff;
+  color: var(--clr-text);
   margin-bottom: var(--sp-4);
   position: relative;
   overflow: hidden;
@@ -767,7 +761,7 @@ input, textarea {
 .detecting-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(108, 71, 255, 0.85);
+  background: rgba(251, 89, 89, 0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -966,7 +960,7 @@ input, textarea {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  background: linear-gradient(135deg, var(--clr-primary), #a78bfa);
+  background: var(--clr-primary);
   color: #fff;
   font-size: var(--text-xs);
   font-weight: 600;
@@ -979,7 +973,7 @@ input, textarea {
 .btn-primary {
   width: 100%;
   padding: var(--sp-4);
-  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
+  background: var(--clr-primary);
   color: #fff;
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
@@ -1015,12 +1009,12 @@ input, textarea {
 }
 
 .dup-warning {
-  background: #fff8e1;
-  border: 1px solid #f59e0b;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.4);
   border-radius: var(--radius-md);
   padding: var(--sp-3) var(--sp-4);
   font-size: var(--text-sm);
-  color: #92400e;
+  color: #f59e0b;
   line-height: 1.5;
   margin-bottom: var(--sp-2);
 }
@@ -1043,7 +1037,7 @@ input, textarea {
 }
 
 .btn-secondary:hover {
-  background: #ddd6ff;
+  background: rgba(251,89,89,0.2);
 }
 
 /* ── 14. Outfit Generator Screen ─────────────────── */
@@ -1320,7 +1314,7 @@ input, textarea {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
+  background: var(--clr-primary);
   color: #fff;
   font-size: var(--text-2xl);
   font-weight: 800;
@@ -1378,7 +1372,7 @@ input, textarea {
 
 .style-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--clr-primary), #a78bfa);
+  background: var(--clr-primary);
   border-radius: var(--radius-full);
   transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1545,7 +1539,7 @@ input, textarea {
 
 .btn-delete {
   padding: var(--sp-3) var(--sp-4);
-  background: #fee2e2;
+  background: rgba(239,68,68,0.12);
   color: var(--clr-error);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
@@ -1905,8 +1899,9 @@ input, textarea {
   bottom: calc(var(--nav-h) + var(--sp-4));
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: var(--clr-text);
-  color: #fff;
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text);
   padding: var(--sp-3) var(--sp-5);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -1947,7 +1942,7 @@ input, textarea {
 .skeleton {
   background: linear-gradient(90deg,
     var(--clr-surface-2) 25%,
-    #e8e8f0 50%,
+    #2a2a2a 50%,
     var(--clr-surface-2) 75%
   );
   background-size: 800px 100%;
@@ -1960,7 +1955,7 @@ img.lazy.loaded { opacity: 1; }
 
 /* ── Header scroll shadow ─────────────────────────── */
 .app-header.scrolled {
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
 }
 
 /* ── Bottom nav — active indicator dot ───────────── */
@@ -1993,7 +1988,7 @@ img.lazy.loaded { opacity: 1; }
 .wardrobe-item.loading {
   background: linear-gradient(90deg,
     var(--clr-surface-2) 25%,
-    #e8e8f0 50%,
+    #2a2a2a 50%,
     var(--clr-surface-2) 75%
   );
   background-size: 800px 100%;
@@ -2008,7 +2003,7 @@ img.lazy.loaded { opacity: 1; }
 
 /* ── Dashboard improvements ──────────────────────── */
 .weather-card {
-  box-shadow: 0 8px 32px rgba(108,71,255,0.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
 .stat-card {
@@ -2059,7 +2054,7 @@ img.lazy.loaded { opacity: 1; }
   cursor: pointer;
 }
 .outfit-piece:hover { background: var(--clr-primary-light); }
-.outfit-piece:active { background: #ddd6ff; }
+.outfit-piece:active { background: var(--clr-primary-light); }
 
 .outfit-piece-img {
   box-shadow: var(--shadow-sm);
@@ -2177,5 +2172,5 @@ img.lazy.loaded { opacity: 1; }
 .text-input:focus,
 .number-input:focus,
 .chat-input:focus {
-  box-shadow: 0 0 0 3px rgba(108,71,255,0.15);
+  box-shadow: 0 0 0 3px rgba(251,89,89,0.2);
 }

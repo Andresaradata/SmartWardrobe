@@ -66,9 +66,12 @@
   - 7 day slots on a screen, tap a slot → generate or pick an outfit → save it
   - Show the week plan on the dashboard
 
-- [ ] **Saved looks**
-  - After generating an outfit, user can tap "Save" and give it a name
-  - Saved looks appear in the Outfits tab
+- [x] **Flatlay outfit builder + Saved Looks (Looks tab)**
+  - Renamed "Outfits" → "Looks"
+  - Flatlay builder: vertical stack of slots (outerwear, top, bottom, shoes), tap slot → swap from wardrobe row below
+  - Auto-generates outfit on load, refresh button, occasion pills
+  - Save built look → appears in saved looks grid
+  - Upload full outfit photo → saved as a look card
 
 - [ ] **Connect onboarding answers to outfit logic**
   - If user selected "business" style → outfit generator defaults to business occasion

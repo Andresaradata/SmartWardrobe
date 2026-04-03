@@ -509,148 +509,261 @@ function _wireWardrobe() {
   });
 }
 
-// ── Outfit Generator ───────────────────────────────
+// ── Looks (Flatlay Builder) ────────────────────────
+let _looksOutfit  = { tops: null, bottoms: null, shoes: null, outerwear: null };
+let _activeSlot   = "tops";
+let _looksOccasion = "casual";
+
+function _getLooks() {
+  try { return JSON.parse(localStorage.getItem("savedLooks") || "[]"); } catch { return []; }
+}
+function _persistLook(look) {
+  const looks = _getLooks();
+  looks.unshift(look);
+  localStorage.setItem("savedLooks", JSON.stringify(looks.slice(0, 20)));
+}
+function _deleteLook(id) {
+  const looks = _getLooks().filter(l => l.id !== id);
+  localStorage.setItem("savedLooks", JSON.stringify(looks));
+}
+
 function _renderOutfits() {
   const ctx      = currentWeather;
   const occasions = ["casual", "business", "formal", "sport", "evening", "weekend"];
-  const items    = wardrobe.getAll();
+  const savedLooks = _getLooks();
 
   return `
     <div class="screen">
-      <p class="screen-title">Outfit Ideas</p>
-      <p class="screen-subtitle">AI-powered looks from your wardrobe</p>
+      <p class="screen-title">Your Looks</p>
+      <p class="screen-subtitle">Build outfits from your wardrobe</p>
 
-      <!-- Weather context bar -->
-      <div class="outfit-context-bar">
+      <!-- Weather strip -->
+      <div class="outfit-context-bar" style="margin-bottom:var(--sp-4)">
         <div class="context-weather">
           <span>${ctx ? ctx.icon : "🌡️"}</span>
           <span>${ctx ? `${ctx.temp}°C · ${ctx.summary}` : "Loading weather..."}</span>
         </div>
       </div>
 
-      <!-- Occasion selector -->
-      <p style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--sp-3)">Occasion</p>
-      <div class="occasion-pills" id="occasionPills">
-        ${occasions.map((o, i) => `
-          <button class="occasion-pill ${i === 0 ? "active" : ""}" data-occasion="${o}">
+      <!-- Occasion pills -->
+      <div class="occasion-pills" id="occasionPills" style="margin-bottom:var(--sp-5)">
+        ${occasions.map(o => `
+          <button class="occasion-pill ${o === _looksOccasion ? "active" : ""}" data-occasion="${o}">
             ${o.charAt(0).toUpperCase() + o.slice(1)}
           </button>
         `).join("")}
       </div>
 
-      <!-- Anchor selector: start with an item -->
-      <div class="section-header">
-        <span class="section-title">Start with an item</span>
-        <span style="font-size:var(--text-xs);color:var(--clr-text-3)">optional</span>
-      </div>
-      <div style="display:flex;gap:var(--sp-3);overflow-x:auto;padding-bottom:var(--sp-3);margin-bottom:var(--sp-5);scrollbar-width:none">
-        <button class="filter-chip active" data-anchor="null" id="anchorNone">Surprise me</button>
-        ${items.slice(0, 10).map(i => `
-          <button class="filter-chip" data-anchor="${i.id}" style="flex-shrink:0">
-            ${CATEGORY_EMOJI[i.category]} ${i.name || i.category}
-          </button>
-        `).join("")}
+      <!-- Flatlay builder -->
+      <div class="flatlay-builder">
+        ${_flatlaySlotHTML("outerwear", "Outerwear")}
+        ${_flatlaySlotHTML("tops",      "Top")}
+        ${_flatlaySlotHTML("bottoms",   "Bottom")}
+        ${_flatlaySlotHTML("shoes",     "Shoes")}
       </div>
 
-      <!-- Generate button -->
-      <button class="btn-primary" id="generateOutfitBtn" style="margin-top:0;margin-bottom:var(--sp-5)">
-        <i data-lucide="sparkles"></i>
-        Generate Outfit
-      </button>
+      <!-- Swapper row -->
+      <div class="swapper-scroll" id="swapperRow"></div>
 
-      <!-- Result -->
-      <div id="outfitResult"></div>
+      <!-- Actions -->
+      <div class="looks-actions">
+        <button class="btn-secondary" id="refreshLookBtn">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+        <button class="btn-primary" id="wearLookBtn" style="flex:1">
+          <i data-lucide="check-circle"></i> Wear today
+        </button>
+        <button class="btn-secondary" id="saveLookBtn">
+          <i data-lucide="bookmark"></i> Save
+        </button>
+      </div>
+
+      <!-- Saved Looks -->
+      <div class="section-header" style="margin-top:var(--sp-7)">
+        <span class="section-title">Saved Looks</span>
+        <label class="section-link" style="cursor:pointer">
+          + Add photo
+          <input type="file" id="lookPhotoInput" accept="image/*" style="display:none" />
+        </label>
+      </div>
+
+      ${savedLooks.length === 0 ? `
+        <div class="card" style="text-align:center;padding:var(--sp-8);color:var(--clr-text-2)">
+          Save a built look or upload a full outfit photo
+        </div>
+      ` : `
+        <div class="saved-looks-grid">
+          ${savedLooks.map(l => `
+            <div class="saved-look-card" data-look-id="${l.id}">
+              ${l.photo
+                ? `<img src="${l.photo}" class="saved-look-photo" alt="${l.label}" />`
+                : `<div class="saved-look-icons">${l.icons || ""}</div>`
+              }
+              <div class="saved-look-meta">
+                <span class="saved-look-label">${l.label}</span>
+                <button class="saved-look-delete" data-delete="${l.id}">✕</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function _flatlaySlotHTML(cat, label) {
+  const item = _looksOutfit[cat];
+  const isActive = _activeSlot === cat;
+  return `
+    <div class="flatlay-slot ${isActive ? "active" : ""}" data-slot="${cat}" id="slot-${cat}">
+      <div class="slot-icon">
+        ${item
+          ? _itemIcon(item, { size: "80px", radius: "var(--radius-lg)" })
+          : `<div class="slot-empty-icon"><span>${CATEGORY_EMOJI[cat] || "+"}</span></div>`
+        }
+      </div>
+      <div class="slot-meta">
+        <span class="slot-role">${label}</span>
+        <span class="slot-name">${item ? (item.name || item.category) : "tap to pick"}</span>
+      </div>
     </div>
   `;
 }
 
 function _wireOutfits() {
-  let selectedOccasion = "casual";
-  let selectedAnchorId = null;
+  // Auto-generate initial outfit
+  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion);
+  if (generated) {
+    _looksOutfit = {
+      tops:      generated.tops      || null,
+      bottoms:   generated.bottoms   || null,
+      shoes:     generated.shoes     || null,
+      outerwear: generated.outerwear || null,
+    };
+    _refreshFlatlay();
+  }
+
+  // Set initial active slot + swapper
+  _setActiveSlot(_activeSlot);
 
   // Occasion pills
   document.querySelectorAll(".occasion-pill").forEach(pill => {
     pill.addEventListener("click", () => {
       document.querySelectorAll(".occasion-pill").forEach(p => p.classList.remove("active"));
       pill.classList.add("active");
-      selectedOccasion = pill.dataset.occasion;
+      _looksOccasion = pill.dataset.occasion;
+      _generateNewLook();
     });
   });
 
-  // Anchor chips
-  document.querySelectorAll("[data-anchor]").forEach(chip => {
-    chip.addEventListener("click", () => {
-      document.querySelectorAll("[data-anchor]").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      selectedAnchorId = chip.dataset.anchor === "null" ? null : chip.dataset.anchor;
-    });
+  // Flatlay slot clicks
+  document.querySelectorAll(".flatlay-slot").forEach(slot => {
+    slot.addEventListener("click", () => _setActiveSlot(slot.dataset.slot));
   });
 
-  // Generate
-  document.getElementById("generateOutfitBtn").addEventListener("click", () => {
-    const anchor  = selectedAnchorId ? wardrobe.getById(selectedAnchorId) : null;
-    const outfit  = OutfitEngine.generate(anchor, currentWeather, selectedOccasion);
-    const resultEl = document.getElementById("outfitResult");
+  // Refresh
+  document.getElementById("refreshLookBtn").addEventListener("click", _generateNewLook);
 
-    if (!outfit) {
-      resultEl.innerHTML = `<div class="card" style="text-align:center;padding:var(--sp-8)"><p style="color:var(--clr-text-2)">Add more items to get outfit suggestions!</p></div>`;
-      return;
-    }
+  // Wear today
+  document.getElementById("wearLookBtn").addEventListener("click", () => {
+    const worn = Object.values(_looksOutfit).filter(Boolean);
+    worn.forEach(item => wardrobe.markWorn(item.id));
+    showToast(`${worn.length} items logged as worn 👗`, "success");
+  });
 
-    const pieces = [
-      { role: "Top",      item: outfit.tops },
-      { role: "Bottom",   item: outfit.bottoms },
-      { role: "Shoes",    item: outfit.shoes },
-      { role: "Outerwear",item: outfit.outerwear },
-    ].filter(p => p.item);
+  // Save look (built outfit)
+  document.getElementById("saveLookBtn").addEventListener("click", () => {
+    const pieces = Object.values(_looksOutfit).filter(Boolean);
+    if (!pieces.length) { showToast("Build an outfit first", "error"); return; }
+    const icons = pieces.map(i => _itemIcon(i, { size: "48px", radius: "var(--radius-sm)" })).join("");
+    const label = `${_looksOccasion.charAt(0).toUpperCase() + _looksOccasion.slice(1)} look`;
+    _persistLook({ id: Date.now().toString(), label, icons, photo: null, date: new Date().toISOString() });
+    showToast("Look saved!", "success");
+    navigateTo("outfits");
+  });
 
-    resultEl.innerHTML = `
-      <div class="outfit-result-card">
-        <div class="outfit-result-header">
-          <span class="outfit-result-title">✨ Your ${selectedOccasion} look</span>
-          <button class="btn-secondary" id="refreshOutfitBtn" style="padding:var(--sp-2) var(--sp-3);font-size:var(--text-xs)">
-            <i data-lucide="refresh-cw"></i> Refresh
-          </button>
-        </div>
-        <div class="outfit-result-items">
-          ${pieces.map(p => `
-            <div class="outfit-piece" onclick="openItemDetail('${p.item.id}')">
-              <div class="outfit-piece-img">
-                ${_itemIcon(p.item, { size: "56px", radius: "var(--radius-sm)" })}
-              </div>
-              <div class="outfit-piece-info">
-                <div class="outfit-piece-role">${p.role}</div>
-                <div class="outfit-piece-name">${p.item.name || p.item.category}</div>
-                ${p.item.brand ? `<div style="font-size:var(--text-xs);color:var(--clr-text-3)">${p.item.brand}</div>` : ""}
-              </div>
-            </div>
-          `).join("")}
-        </div>
-        <div class="outfit-actions">
-          <button class="btn-wear" id="wearOutfitBtn" style="flex:1">
-            <i data-lucide="check-circle"></i> Wear this today
-          </button>
-        </div>
-      </div>
-    `;
-    lucide.createIcons();
+  // Upload full outfit photo
+  document.getElementById("lookPhotoInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      _persistLook({ id: Date.now().toString(), label: "Outfit photo", photo: ev.target.result, icons: null, date: new Date().toISOString() });
+      showToast("Look saved!", "success");
+      navigateTo("outfits");
+    };
+    reader.readAsDataURL(file);
+  });
 
-    // Refresh
-    document.getElementById("refreshOutfitBtn").addEventListener("click", () => {
-      const newAnchor = selectedAnchorId ? wardrobe.getById(selectedAnchorId) : null;
-      const newOutfit = OutfitEngine.generate(newAnchor, currentWeather, selectedOccasion);
-      if (newOutfit) {
-        // Re-render result by clicking generate again
-        document.getElementById("generateOutfitBtn").click();
-      }
-    });
-
-    // Mark all pieces as worn
-    document.getElementById("wearOutfitBtn").addEventListener("click", () => {
-      pieces.forEach(p => wardrobe.markWorn(p.item.id));
-      showToast("Outfit logged! Wear count updated 👗", "success");
+  // Delete saved look
+  document.querySelectorAll("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      _deleteLook(btn.dataset.delete);
+      navigateTo("outfits");
     });
   });
+}
+
+function _setActiveSlot(cat) {
+  _activeSlot = cat;
+  document.querySelectorAll(".flatlay-slot").forEach(el => el.classList.remove("active"));
+  const slotEl = document.getElementById(`slot-${cat}`);
+  if (slotEl) slotEl.classList.add("active");
+  _renderSwapperRow(cat);
+}
+
+function _renderSwapperRow(cat) {
+  const row   = document.getElementById("swapperRow");
+  if (!row) return;
+  const items = wardrobe.getAll().filter(i => i.category === cat);
+
+  if (!items.length) {
+    row.innerHTML = `<p style="color:var(--clr-text-2);font-size:var(--text-sm);padding:var(--sp-3)">No ${cat} in your wardrobe yet</p>`;
+    return;
+  }
+
+  row.innerHTML = items.map(item => `
+    <button class="swapper-item ${_looksOutfit[cat]?.id === item.id ? "selected" : ""}" data-id="${item.id}" data-cat="${cat}">
+      ${_itemIcon(item, { size: "64px", radius: "var(--radius-md)" })}
+      <span class="swapper-name">${item.name || item.category}</span>
+    </button>
+  `).join("");
+
+  row.querySelectorAll(".swapper-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _looksOutfit[btn.dataset.cat] = wardrobe.getById(btn.dataset.id);
+      _refreshFlatlay();
+      _renderSwapperRow(btn.dataset.cat);
+    });
+  });
+}
+
+function _refreshFlatlay() {
+  const slots = ["outerwear", "tops", "bottoms", "shoes"];
+  slots.forEach(cat => {
+    const el = document.getElementById(`slot-${cat}`);
+    if (!el) return;
+    const item = _looksOutfit[cat];
+    el.querySelector(".slot-icon").innerHTML = item
+      ? _itemIcon(item, { size: "80px", radius: "var(--radius-lg)" })
+      : `<div class="slot-empty-icon"><span>${CATEGORY_EMOJI[cat] || "+"}</span></div>`;
+    el.querySelector(".slot-name").textContent = item ? (item.name || item.category) : "tap to pick";
+  });
+  lucide.createIcons();
+}
+
+function _generateNewLook() {
+  const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion);
+  if (!generated) { showToast("Add more items to your wardrobe first", "error"); return; }
+  _looksOutfit = {
+    tops:      generated.tops      || null,
+    bottoms:   generated.bottoms   || null,
+    shoes:     generated.shoes     || null,
+    outerwear: generated.outerwear || null,
+  };
+  _refreshFlatlay();
+  _renderSwapperRow(_activeSlot);
 }
 
 // ── AI Assistant ───────────────────────────────────

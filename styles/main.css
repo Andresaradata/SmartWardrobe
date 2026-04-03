@@ -1648,7 +1648,176 @@ input, textarea {
   padding: var(--sp-5);
 }
 
-/* ── 19. Sensor Card ──────────────────────────────── */
+/* ── 19. Flatlay Looks Builder ───────────────────── */
+.flatlay-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.flatlay-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--clr-surface);
+  border-radius: var(--radius-xl);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.flatlay-slot.active {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px var(--clr-primary-light);
+}
+.flatlay-slot:hover:not(.active) {
+  border-color: var(--clr-border);
+}
+
+.slot-icon {
+  flex-shrink: 0;
+}
+
+.slot-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  background: var(--clr-bg);
+  border: 2px dashed var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--clr-text-3);
+}
+
+.slot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slot-role {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--clr-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slot-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+/* Swapper row */
+.swapper-scroll {
+  display: flex;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  padding: var(--sp-2) 0 var(--sp-4);
+  scrollbar-width: none;
+  min-height: 100px;
+  align-items: flex-start;
+}
+.swapper-scroll::-webkit-scrollbar { display: none; }
+
+.swapper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  background: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.swapper-item.selected {
+  border-color: var(--clr-primary);
+  background: var(--clr-primary-light);
+}
+.swapper-item:hover:not(.selected) {
+  border-color: var(--clr-border);
+}
+
+.swapper-name {
+  font-size: var(--text-xs);
+  color: var(--clr-text-2);
+  max-width: 68px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Looks actions bar */
+.looks-actions {
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+/* Saved looks grid */
+.saved-looks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.saved-look-card {
+  background: var(--clr-surface);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.saved-look-photo {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  display: block;
+}
+
+.saved-look-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  justify-content: center;
+  min-height: 80px;
+  align-items: center;
+}
+
+.saved-look-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--clr-border);
+}
+
+.saved-look-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--clr-text);
+}
+
+.saved-look-delete {
+  background: none;
+  border: none;
+  color: var(--clr-text-3);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  padding: var(--sp-1);
+}
+
+/* ── 20. Sensor Card ──────────────────────────────── */
 .sensor-live-dot {
   width: 8px;
   height: 8px;

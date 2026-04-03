@@ -37,17 +37,23 @@ const COLOR_ICON = {
 
 // SVG paths for each clothing category (viewBox 0 0 24 24)
 const CATEGORY_SVG = {
+  // T-shirt: classic wide sleeve triangles + round neckline
   tops: `<path d="M20 7.5L16 4h-1.5C14.5 5.1 13.4 6 12 6S9.5 5.1 9.5 4H8L4 7.5 6.5 10 8 8.8V20h8V8.8L17.5 10z" fill="currentColor"/>`,
 
+  // Trousers: wide waistband tapering into two legs
   bottoms: `<path d="M6 4L5 20h5.5l1.5-7 1.5 7H19l-1-16z" fill="currentColor"/><path d="M6 4h12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>`,
 
-  shoes: `<path d="M3 16.5c0-1.7 1.3-3 3-3h5l3.5-4.5c1-1.5 3.5-1 4.5.5.8 1.2.3 2.8-1 3.5L19 16.5H3z" fill="currentColor"/><path d="M19 13.5c.5-.5.5-1.5 0-2" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>`,
+  // Sneaker: profile view with upper + thick sole
+  shoes: `<path d="M4 16c0-1.7 1.3-3 3-3h4.5L15 9.5c1-1.5 3.5-1 4 1l.5 2 1.5 1c.6.4.5 1.5-.2 1.8L4 16z" fill="currentColor"/><rect x="3" y="16" width="18" height="2.5" rx="1.2" fill="currentColor" opacity="0.8"/>`,
 
-  outerwear: `<path d="M15.5 4L21 9l-3 3-2.2-2V20H8.2V10L6 12l-3-3 5.5-5c.5 1.8 2 3 3.5 3s3-1.2 3.5-3z" fill="currentColor"/><line x1="12" y1="8" x2="12" y2="14" stroke="currentColor" stroke-width="1.2" fill="none"/>`,
+  // Long coat: tall rectangular body + V-notch lapels + center button placket
+  outerwear: `<path d="M8.5 3H15.5L19.5 6.5V21H4.5V6.5Z" fill="currentColor"/><path d="M9 5.5L12 10L15 5.5" fill="none" stroke="white" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" opacity="0.65"/><line x1="12" y1="10" x2="12" y2="20" stroke="white" stroke-width="1" opacity="0.4"/>`,
 
+  // Dress: fitted bodice + flared A-line skirt
   dresses: `<path d="M12 2c-1.2 0-3 1.2-3.8 3L5 20h14L15.8 5C15 3.2 13.2 2 12 2z" fill="currentColor"/><path d="M9.2 5h5.6" stroke="white" stroke-width="1" fill="none" stroke-linecap="round" opacity=".4"/>`,
 
-  accessories: `<path d="M8 9V6.5C8 4.6 9.8 3 12 3s4 1.6 4 3.5V9h3.5l1 12H3.5l1-12H8z" fill="currentColor"/><path d="M10 9V6.5C10 5.7 10.9 5 12 5s2 .7 2 1.5V9" stroke="currentColor" stroke-width="1.2" fill="none"/>`,
+  // Handbag: rectangular body + top-handle loop
+  accessories: `<path d="M6 9h12c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-8c0-1.1.9-2 2-2z" fill="currentColor"/><path d="M9 9V7C9 5.3 10.3 4 12 4S15 5.3 15 7V9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
 };
 
 // ── Emoji fallbacks per category ──────────────────

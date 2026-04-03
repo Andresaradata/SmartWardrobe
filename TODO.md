@@ -80,8 +80,8 @@
 
 ## PRIORITY 3 — Only if everything else is 100% done
 
-- [ ] **Style profile — real data**
-  - Pull user's name from onboarding (currently hardcoded as "Omar")
+- [x] **Style profile — real data**
+  - ~~Pull user's name from onboarding (currently hardcoded as "Omar")~~ — done: name collected in onboarding step, shown in dashboard greeting and profile screen
   - Sustainability score: show which items haven't been worn in 30+ days with a nudge
 
 - [ ] **Wardrobe display view**

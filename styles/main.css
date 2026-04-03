@@ -1625,6 +1625,23 @@ input, textarea {
   color: var(--clr-primary);
 }
 
+.onboarding-text-input {
+  width: 100%;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-lg);
+  font-family: inherit;
+  color: var(--clr-text);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.onboarding-text-input:focus {
+  border-color: var(--clr-primary);
+}
+
 .onboarding-nav {
   display: flex;
   gap: var(--sp-3);

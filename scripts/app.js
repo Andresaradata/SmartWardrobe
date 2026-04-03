@@ -13,8 +13,16 @@ const ONBOARDING_STEPS = [
   {
     emoji: "👋",
     title: "Welcome to Smart Wardrobe",
-    sub: "Your personal AI style assistant. Let's set up your style profile in 3 quick questions.",
+    sub: "Your personal AI style assistant. Let's set up your style profile in a few quick questions.",
     type: "info",
+  },
+  {
+    emoji: "🙋",
+    title: "What's your name?",
+    sub: "So we can make it feel personal.",
+    type: "text",
+    key: "name",
+    placeholder: "Your first name",
   },
   {
     emoji: "👔",
@@ -110,7 +118,7 @@ function _renderOnboardingStep() {
     <div class="step-emoji">${step.emoji}</div>
     <h2 class="step-title">${step.title}</h2>
     <p class="step-sub">${step.sub}</p>
-    ${step.type !== "info" ? `
+    ${step.type === "single" ? `
       <div class="step-options">
         ${step.options.map(o => `
           <button class="step-option ${styleProfile[step.key] === o.val ? "selected" : ""}"
@@ -119,6 +127,13 @@ function _renderOnboardingStep() {
             ${o.label}
           </button>
         `).join("")}
+      </div>
+    ` : step.type === "text" ? `
+      <div class="step-options">
+        <input id="onboardingTextInput" type="text" class="onboarding-text-input"
+               placeholder="${step.placeholder || ""}"
+               value="${styleProfile[step.key] || ""}"
+               autocomplete="off" />
       </div>
     ` : ""}
   `;
@@ -134,6 +149,15 @@ function _renderOnboardingStep() {
     });
   });
 
+  // Wire text input
+  const textInput = el.querySelector("#onboardingTextInput");
+  if (textInput) {
+    textInput.addEventListener("input", () => {
+      styleProfile[step.key] = textInput.value.trim();
+    });
+    textInput.focus();
+  }
+
   // Show/hide back button
   const backBtn = document.getElementById("onboardingBack");
   backBtn.style.display = onboardingStep === 0 ? "none" : "";
@@ -147,9 +171,13 @@ function _setupOnboardingNav() {
   document.getElementById("onboardingNext").addEventListener("click", () => {
     const step = ONBOARDING_STEPS[onboardingStep];
 
-    // Require a selection on choice steps
+    // Require a selection or name on choice steps
     if (step.type === "single" && !styleProfile[step.key]) {
       showToast("Please pick an option to continue", "error");
+      return;
+    }
+    if (step.type === "text" && !styleProfile[step.key]) {
+      showToast("Please enter your name to continue", "error");
       return;
     }
 
@@ -259,7 +287,7 @@ function _renderDashboard() {
 
   return `
     <div class="screen">
-      <p class="dash-greeting">Good ${_timeOfDay()}, Omar 👋</p>
+      <p class="dash-greeting">Good ${_timeOfDay()}, ${Profile.get().name || "there"} 👋</p>
       <p class="dash-date">${today}</p>
 
       <!-- Weather Card -->
@@ -646,8 +674,8 @@ function _renderProfile() {
   return `
     <div class="screen">
       <div class="profile-header">
-        <div class="profile-avatar">O</div>
-        <div class="profile-name">Omar</div>
+        <div class="profile-avatar">${(profile.name || "?")[0].toUpperCase()}</div>
+        <div class="profile-name">${profile.name || "You"}</div>
         <div class="profile-style-tag">✦ ${_styleLabel(profile.baseStyle)}</div>
       </div>
 

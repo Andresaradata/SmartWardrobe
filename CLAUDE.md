@@ -82,6 +82,7 @@ SmartWardrobe/
 - [x] Pre-load demo data
 - [x] Push to GitHub
 - [x] Deployed on GitHub Pages → https://omla903.github.io/SmartWardrobe/
+- [x] Dynamic user name — collected in onboarding, shown in dashboard greeting + profile screen
 
 ## What "Good" Looks Like
 - Feels like a real mobile app (not a webpage)

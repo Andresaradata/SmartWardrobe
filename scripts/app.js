@@ -620,15 +620,11 @@ function _renderOutfits() {
       <!-- Saved Looks -->
       <div class="section-header" style="margin-top:var(--sp-7)">
         <span class="section-title">Saved Looks</span>
-        <label class="section-link" style="cursor:pointer">
-          + Add photo
-          <input type="file" id="lookPhotoInput" accept="image/*" style="display:none" />
-        </label>
       </div>
 
       ${savedLooks.length === 0 ? `
         <div class="card" style="text-align:center;padding:var(--sp-8);color:var(--clr-text-2)">
-          Save a built look or upload a full outfit photo
+          Save a built look, or upload an outfit photo via the + button
         </div>
       ` : `
         <div class="saved-looks-grid">
@@ -731,18 +727,6 @@ function _wireOutfits() {
   });
 
   // Upload full outfit photo
-  document.getElementById("lookPhotoInput").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      _persistLook({ id: Date.now().toString(), label: "Outfit photo", photo: ev.target.result, icons: null, date: new Date().toISOString() });
-      showToast("Look saved!", "success");
-      navigateTo("outfits");
-    };
-    reader.readAsDataURL(file);
-  });
-
   // Delete saved look
   document.querySelectorAll("[data-delete]").forEach(btn => {
     btn.addEventListener("click", e => {
@@ -1185,36 +1169,28 @@ function _setupAddModal() {
     const compressed = await compressImage(file);
     _showImagePreview(compressed);
 
-    // Show detecting overlay
     const overlay    = document.getElementById("detectingOverlay");
     const detectText = overlay.querySelector(".detecting-text");
     overlay.classList.remove("hidden");
 
-    // Step 1: remove background (silent fallback if key not set)
-    detectText.textContent = "Removing background...";
-    const noBg = await _tryRemoveBg(compressed);
-    _pendingImage = noBg || compressed;
-    if (noBg) _showImagePreview(noBg);
-
-    // Step 2: AI recognition
-    detectText.textContent = "AI is analyzing your item...";
-    const items = await Recognition.analyzeMultiple(_pendingImage);
-    overlay.classList.add("hidden");
-    detectText.textContent = "AI is analyzing your item...";
-
+    // Step 1: AI recognition — determines single item vs outfit
+    detectText.textContent = "AI is analyzing your photo...";
+    const items = await Recognition.analyzeMultiple(compressed);
     _detectedItems = items;
 
     if (items.length > 1) {
-      // Multiple items — switch to review mode
-      _showMultiItemReview(items, compressed);
+      // Outfit photo — skip background removal, show outfit review
+      overlay.classList.add("hidden");
+      _showOutfitReview(items, compressed);
     } else {
-      // Single item — fill the standard form, pre-generate icon as fallback
-      const detected = items[0];
-      _applyRecognitionResult(detected);
-      // Store the generated icon URL; will be overridden by real photo if user uploaded one
-      if (!_pendingImage) {
-        _pendingImage = Recognition.generateIcon(detected);
-      }
+      // Single clothing item — remove background, then show item form
+      detectText.textContent = "Removing background...";
+      const noBg = await _tryRemoveBg(compressed);
+      _pendingImage = noBg || compressed;
+      if (noBg) _showImagePreview(noBg);
+      overlay.classList.add("hidden");
+
+      _applyRecognitionResult(items[0]);
       document.getElementById("itemForm").classList.remove("hidden");
       document.getElementById("saveItemBtn").classList.remove("hidden");
       document.getElementById("cancelAddBtn").classList.remove("hidden");
@@ -1277,128 +1253,85 @@ function _showImagePreview(base64) {
 }
 
 // ── Multi-item review UI ───────────────────────────
-function _showMultiItemReview(items, photoBase64) {
+// ── Outfit photo review — detected from multi-item photo ──
+function _showOutfitReview(items, photoBase64) {
   document.getElementById("itemForm").classList.add("hidden");
   document.getElementById("saveItemBtn").classList.add("hidden");
   document.getElementById("cancelAddBtn").classList.add("hidden");
   document.getElementById("multiItemReview")?.remove();
 
-  // Generate icon URLs for all items immediately (Pollinations builds lazily)
-  items.forEach(item => {
-    if (!item._iconUrl) item._iconUrl = Recognition.generateIcon(item);
+  const allWardrobe = wardrobe.getAll();
+
+  // Tag each detected item: is it already in the wardrobe?
+  const tagged = items.map(item => {
+    const match = allWardrobe.find(w => w.category === item.category && w.color === item.color);
+    return { ...item, inWardrobe: !!match };
   });
+
+  const missingCount = tagged.filter(i => !i.inWardrobe).length;
+
+  const statusBanner = missingCount > 0
+    ? `<div style="background:#fef3c7;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:0.75rem;font-weight:600;color:#92400e">
+        ⚠ ${missingCount} item${missingCount > 1 ? "s" : ""} not found in your wardrobe
+       </div>`
+    : `<div style="background:#d1fae5;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:0.75rem;font-weight:600;color:#065f46">
+        ✓ All items are already in your wardrobe
+       </div>`;
+
+  const itemRows = tagged.map(item => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--clr-border)">
+      <div style="
+        width:36px;height:36px;flex-shrink:0;border-radius:6px;
+        background:${COLOR_TINT[item.color] || "#eee"};
+        display:flex;align-items:center;justify-content:center;
+      ">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="color:${COLOR_ICON[item.color] || "#888"}">
+          ${CATEGORY_SVG[item.category] || CATEGORY_SVG.tops}
+        </svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.875rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name || item.category}</div>
+        <div style="font-size:0.75rem;color:var(--clr-text-2);text-transform:capitalize">${item.color} · ${item.category}</div>
+      </div>
+      <span style="
+        flex-shrink:0;font-size:0.7rem;font-weight:700;
+        padding:3px 8px;border-radius:999px;
+        ${item.inWardrobe ? "background:#d1fae5;color:#065f46" : "background:#fef3c7;color:#92400e"}
+      ">${item.inWardrobe ? "In wardrobe" : "Not in wardrobe"}</span>
+    </div>
+  `).join("");
 
   const reviewHtml = `
     <div id="multiItemReview">
-      <p style="font-size:var(--text-sm);color:var(--clr-text-2);margin-bottom:var(--sp-4)">
-        AI detected <strong>${items.length} items</strong>. Review and save.
+      <p style="font-size:0.875rem;color:var(--clr-text-2);margin-bottom:12px">
+        AI detected <strong>${items.length} items</strong> — looks like an outfit photo.
       </p>
-
-      <div id="detectedItemsList">
-        ${items.map((item, i) => _renderDetectedItemCard(item, i)).join("")}
-      </div>
-
-      <div style="border-top:1px solid var(--clr-border);padding-top:var(--sp-4);margin-top:var(--sp-2)">
-        <p style="font-size:var(--text-xs);color:var(--clr-text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:var(--sp-3)">Apply to all items (optional)</p>
-        <input type="text"   id="batchBrand"      class="text-input"    placeholder="Brand (e.g. Zara)"       style="margin-bottom:var(--sp-3)" />
-        <input type="number" id="batchTimesWorn"  class="number-input"  placeholder="Times worn (e.g. 5)"     style="margin-bottom:var(--sp-3)" min="0" />
-        <input type="date"   id="batchLastWorn"   class="text-input" />
-      </div>
-
-      <button class="btn-primary" id="saveAllItemsBtn" style="margin-top:var(--sp-5)">
-        <i data-lucide="check"></i>
-        Save all ${items.length} items to Wardrobe
+      ${statusBanner}
+      <div style="margin-bottom:16px">${itemRows}</div>
+      <button class="btn-primary" id="saveOutfitLookBtn" style="margin-top:8px">
+        <i data-lucide="bookmark"></i> Save as Look
       </button>
-      <button class="btn-ghost" id="cancelMultiBtn">Cancel</button>
+      <button class="btn-ghost" id="cancelOutfitBtn">Cancel</button>
     </div>
   `;
 
   document.getElementById("uploadZone").insertAdjacentHTML("afterend", reviewHtml);
   lucide.createIcons();
 
-  document.querySelectorAll(".remove-detected-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const idx = parseInt(btn.dataset.idx);
-      _detectedItems.splice(idx, 1);
-      if (_detectedItems.length === 0) { closeAddModal(); return; }
-      _showMultiItemReview(_detectedItems, photoBase64);
+  document.getElementById("saveOutfitLookBtn").addEventListener("click", () => {
+    _persistLook({
+      id:    Date.now().toString(),
+      label: `Outfit · ${items.length} pieces`,
+      photo: photoBase64,
+      icons: null,
+      date:  new Date().toISOString(),
     });
+    closeAddModal();
+    showToast("Look saved!", "success");
+    navigateTo("outfits");
   });
 
-  document.getElementById("saveAllItemsBtn").addEventListener("click", () => _saveAllDetectedItems());
-  document.getElementById("cancelMultiBtn").addEventListener("click", closeAddModal);
-}
-
-function _renderDetectedItemCard(item, idx) {
-  const iconUrl = item._iconUrl || "";
-
-  return `
-    <div class="detected-item-card" id="detectedCard_${idx}" style="
-      background:var(--clr-surface-2);
-      border:1.5px solid var(--clr-border);
-      border-radius:var(--radius-lg);
-      padding:var(--sp-4);
-      margin-bottom:var(--sp-3);
-    ">
-      <div style="display:flex;align-items:flex-start;gap:var(--sp-3);margin-bottom:var(--sp-3)">
-
-        <!-- Product icon -->
-        <div style="width:72px;height:72px;flex-shrink:0;border-radius:var(--radius-md);overflow:hidden">
-          ${_itemIcon(item, { size: "72px", radius: "var(--radius-md)" })}
-        </div>
-
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:var(--text-sm);margin-bottom:2px">${item.name || item.category}</div>
-          <div style="font-size:var(--text-xs);color:var(--clr-text-2);text-transform:capitalize;margin-bottom:var(--sp-2)">
-            ${item.color} · ${item.category}
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px">
-            ${(item.season||[]).map(s => `<span class="item-tag">${s}</span>`).join("")}
-            ${(item.style||[]).slice(0,2).map(s => `<span class="item-tag">${s}</span>`).join("")}
-          </div>
-        </div>
-
-        <button class="remove-detected-btn" data-idx="${idx}" style="
-          width:28px;height:28px;border-radius:50%;background:#fee2e2;
-          color:var(--clr-error);font-size:1.1rem;font-weight:700;
-          display:flex;align-items:center;justify-content:center;flex-shrink:0;
-        ">×</button>
-      </div>
-
-      <!-- Editable name -->
-      <input type="text" class="text-input detected-name" data-idx="${idx}"
-        placeholder="Item name (optional)" value="${item.name || ""}"
-        style="font-size:var(--text-sm)" />
-    </div>
-  `;
-}
-
-function _saveAllDetectedItems() {
-  const brand     = document.getElementById("batchBrand")?.value.trim() || "";
-  const timesWorn = document.getElementById("batchTimesWorn")?.value    || 0;
-  const lastWorn  = document.getElementById("batchLastWorn")?.value     || null;
-
-  // Sync edited names back to _detectedItems
-  document.querySelectorAll(".detected-name").forEach(input => {
-    const idx = parseInt(input.dataset.idx);
-    if (_detectedItems[idx]) _detectedItems[idx].name = input.value.trim();
-  });
-
-  _detectedItems.forEach(item => {
-    wardrobe.add({
-      ...item,
-      brand,
-      timesWorn,
-      lastWorn,
-      image: item._iconUrl || null, // generated product icon URL
-    });
-  });
-
-  closeAddModal();
-  showToast(`${_detectedItems.length} items added to wardrobe`, "success");
-
-  if (currentScreen === "wardrobe")  navigateTo("wardrobe");
-  if (currentScreen === "dashboard") navigateTo("dashboard");
+  document.getElementById("cancelOutfitBtn").addEventListener("click", closeAddModal);
 }
 
 // ── Single item helpers ────────────────────────────

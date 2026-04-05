@@ -5,10 +5,10 @@
 
 /* ── 1. CSS Variables ─────────────────────────────── */
 :root {
-  /* Brand Colors — Smoky Quartz */
-  --clr-primary:       #544F4B;
-  --clr-primary-light: #D8D1CA;
-  --clr-primary-dark:  #2B2927;
+  /* Brand Colors — Smoky Quartz + Olive accent */
+  --clr-primary:       #9d9d60;
+  --clr-primary-light: #e8e8d0;
+  --clr-primary-dark:  #7a7a48;
 
   /* Neutrals — light mode */
   --clr-bg:            #F2EFEC;
@@ -56,7 +56,7 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-  --shadow-primary: 0 4px 20px rgba(84,79,75,0.25);
+  --shadow-primary: 0 4px 20px rgba(157,157,96,0.3);
 
   /* Layout */
   --header-h:  60px;

@@ -1074,7 +1074,7 @@ function _showHowToModal() {
   `;
   modal.innerHTML = `
     <div style="
-      background:var(--clr-bg);border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+      background:#F2EFEC;border-radius:var(--radius-xl) var(--radius-xl) 0 0;
       width:100%;max-width:480px;padding:var(--sp-6) var(--sp-5) calc(var(--sp-6) + env(safe-area-inset-bottom));
       max-height:90vh;overflow-y:auto;
     ">
@@ -1105,13 +1105,13 @@ function _showHowToModal() {
           </div>
         </div>
       </div>
-      <div style="background:var(--clr-surface);border-radius:var(--radius-md);padding:var(--sp-4);margin-top:var(--sp-2)">
+      <div style="background:#ffffff;border-radius:var(--radius-md);padding:var(--sp-4);margin-top:var(--sp-2)">
         <div style="font-size:var(--text-sm);font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-2)">Photo tips</div>
         <p class="how-to-tip">For best results, place items flat on a plain surface or hang them against a plain wall. Good lighting makes the AI more accurate.</p>
       </div>
       <button id="howToGotItBtn" style="
         width:100%;margin-top:var(--sp-5);padding:var(--sp-3);
-        background:var(--clr-primary);color:#fff;border:none;
+        background:#9d9d60;color:#fff;border:none;
         border-radius:var(--radius-full);font-size:var(--text-base);font-weight:700;cursor:pointer;
       ">Got it</button>
     </div>

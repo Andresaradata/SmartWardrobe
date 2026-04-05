@@ -13,53 +13,66 @@ const ONBOARDING_STEPS = [
   {
     emoji: "👋",
     title: "Welcome to Garde",
-    sub: "Your personal AI style assistant. Let's set up your style profile in a few quick questions.",
+    sub: "Your personal AI wardrobe assistant. Let's set up your style profile — it only takes a minute.",
     type: "info",
   },
   {
     emoji: "🙋",
-    title: "What's your name?",
-    sub: "So we can make it feel personal.",
+    title: "First, what's your name?",
+    sub: "We'll use it to personalise your experience.",
     type: "text",
     key: "name",
     placeholder: "Your first name",
   },
   {
     emoji: "👔",
-    title: "What's your everyday style?",
-    sub: "Pick the one that feels most like you.",
+    title: "How would you describe your style?",
+    sub: "Pick the vibe that feels most like you on an average day.",
     type: "single",
     key: "baseStyle",
     options: [
-      { val: "casual",   emoji: "🧢", label: "Casual — comfort first" },
-      { val: "business", emoji: "💼", label: "Business — polished & sharp" },
-      { val: "formal",   emoji: "🎩", label: "Formal — classic & refined" },
-      { val: "sport",    emoji: "🏃", label: "Athletic — active lifestyle" },
+      { val: "casual",   emoji: "🧢", label: "Casual — relaxed & effortless" },
+      { val: "business", emoji: "💼", label: "Business — clean & polished" },
+      { val: "formal",   emoji: "🎩", label: "Formal — sharp & classic" },
+      { val: "sport",    emoji: "🏃", label: "Athletic — function meets style" },
     ],
   },
   {
     emoji: "🎨",
-    title: "Neutral or colorful?",
-    sub: "How would you describe your color palette?",
+    title: "What's your colour comfort zone?",
+    sub: "This helps us suggest outfits that actually feel like you.",
     type: "single",
     key: "colorPref",
     options: [
-      { val: "neutral",  emoji: "⚪", label: "Mostly neutrals — black, white, grey, beige" },
-      { val: "earthy",   emoji: "🟫", label: "Earthy tones — brown, navy, green" },
-      { val: "colorful", emoji: "🌈", label: "I love color!" },
-      { val: "mixed",    emoji: "🔀", label: "A bit of everything" },
+      { val: "neutral",  emoji: "⚪", label: "Neutrals only — black, white, grey, beige" },
+      { val: "earthy",   emoji: "🟫", label: "Earthy & muted — navy, brown, olive" },
+      { val: "colorful", emoji: "🌈", label: "Bold & expressive — I love colour" },
+      { val: "mixed",    emoji: "🔀", label: "Mix it up — depends on the mood" },
+    ],
+  },
+  {
+    emoji: "🌤️",
+    title: "Where do you spend most of your time?",
+    sub: "So outfit suggestions match your real lifestyle.",
+    type: "single",
+    key: "lifestyle",
+    options: [
+      { val: "office",   emoji: "🏢", label: "Office or campus — mostly indoors" },
+      { val: "outdoor",  emoji: "🌿", label: "On the move — a mix of inside & outside" },
+      { val: "social",   emoji: "🍽️", label: "Social life — dinners, events, weekends" },
+      { val: "home",     emoji: "🏠", label: "Home base — remote or flexible schedule" },
     ],
   },
   {
     emoji: "🌍",
-    title: "Sustainability matters to you?",
-    sub: "We'll tailor our shopping advice accordingly.",
+    title: "How do you feel about sustainable fashion?",
+    sub: "We'll adjust our shopping advice to match your priorities.",
     type: "single",
     key: "sustainPref",
     options: [
-      { val: "high",    emoji: "♻️",  label: "Yes — I try to buy less and rewear more" },
-      { val: "medium",  emoji: "🌱",  label: "Somewhat — I'm mindful but practical" },
-      { val: "low",     emoji: "🛍️", label: "Not a priority for me right now" },
+      { val: "high",    emoji: "♻️",  label: "Big priority — I rewear and buy mindfully" },
+      { val: "medium",  emoji: "🌱",  label: "Somewhat — I try when it's convenient" },
+      { val: "low",     emoji: "🛍️", label: "Not really — I just buy what I like" },
     ],
   },
 ];
@@ -209,7 +222,14 @@ function _showApp() {
   _setupAddModal();
   _setupItemDetailModal();
   _setupScrollShadow();
+  _updateAvatarBtn();
   navigateTo("dashboard");
+}
+
+function _updateAvatarBtn() {
+  const name = Profile.get()?.name || "";
+  const initial = name.trim() ? name.trim()[0].toUpperCase() : "?";
+  document.getElementById("avatarBtn").textContent = initial;
 }
 
 // Header drop shadow on scroll

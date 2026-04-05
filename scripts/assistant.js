@@ -36,7 +36,7 @@ const Assistant = (() => {
       if (!response.ok) {
         const errText = await response.text();
         console.error("Groq chat error:", response.status, errText);
-        return `I'm having a moment — here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
+        return `I'm having a moment, here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
       }
 
       const data  = await response.json();
@@ -50,7 +50,7 @@ const Assistant = (() => {
 
     } catch (err) {
       console.error("Assistant fetch error:", err);
-      return `I'm having a moment — here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
+      return `I'm having a moment, here's my best advice anyway:\n\n${_mockReply(userMessage)}`;
     }
   }
 
@@ -197,20 +197,20 @@ RULES:
         const itemLabel = [analysis.color, analysis.category].filter(Boolean).join(" ") || "this item";
         if (analysis.duplicates.length > 0) {
           const dupName = analysis.duplicates[0].name || analysis.duplicates[0].category;
-          return `Duplicate check: you already own ${analysis.duplicates.length} similar item(s) — including your ${dupName}.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items in your wardrobe.\n\nVerdict: skip it for now. You've got it covered.`;
+          return `Duplicate check: you already own ${analysis.duplicates.length} similar item(s), including your ${dupName}.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items in your wardrobe.\n\nVerdict: skip it for now. You've got it covered.`;
         }
-        return `Duplicate check: no exact duplicate found in your wardrobe.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items you already own.\n\nVerdict: ${analysis.compatibleCount >= 3 ? "looks like a solid buy — good compatibility." : "think twice — it doesn't pair with many things you have."}`;
+        return `Duplicate check: no exact duplicate found in your wardrobe.\n\nCompatibility: it would pair with ${analysis.compatibleCount} items you already own.\n\nVerdict: ${analysis.compatibleCount >= 3 ? "looks like a solid buy, good compatibility." : "think twice, it doesn't pair with many things you have."}`;
       }
       return "Before buying, check if you already have something similar. Make sure the new item can pair with at least 3 things you already own.";
     }
     if (lower.includes("wear") || lower.includes("outfit")) {
-      return "Based on your wardrobe, I'd suggest pairing your White Linen Shirt with Black Slim Jeans and White Sneakers — a clean, versatile look that works for most occasions.";
+      return "Based on your wardrobe, I'd suggest pairing your White Linen Shirt with Black Slim Jeans and White Sneakers. A clean, versatile look that works for most occasions.";
     }
     if (lower.includes("weather") || lower.includes("cold") || lower.includes("warm")) {
-      return "For today's weather, I'd recommend layering — your Navy Wool Sweater with Grey Chinos and Brown Chelsea Boots would be both warm and stylish.";
+      return "For today's weather, I'd recommend layering. Your Navy Wool Sweater with Grey Chinos and Brown Chelsea Boots would be both warm and stylish.";
     }
     if (lower.includes("sustain") || lower.includes("eco")) {
-      return "You're doing well! Try to rotate your less-worn pieces more often. Your Striped Linen Tee and Beige Linen Trousers haven't been worn much recently — great candidates for your next outfit.";
+      return "You're doing well! Try to rotate your less-worn pieces more often. Your Striped Linen Tee and Beige Linen Trousers haven't been worn much recently, great candidates for your next outfit.";
     }
 
     return "I'm your wardrobe assistant! Ask me to suggest an outfit, help plan what to wear for an occasion, or advise on a potential purchase.";

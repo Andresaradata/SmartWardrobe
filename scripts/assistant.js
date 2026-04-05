@@ -12,10 +12,6 @@ const Assistant = (() => {
    * @returns {string} assistant reply
    */
   async function send(userMessage) {
-    if (!CONFIG.GROQ_API_KEY || CONFIG.GROQ_API_KEY === "YOUR_GROQ_API_KEY_HERE") {
-      return _mockReply(userMessage);
-    }
-
     const purchaseAnalysis = _analyzePurchaseQuery(userMessage);
     const systemPrompt = _buildSystemPrompt(purchaseAnalysis);
 
@@ -23,12 +19,9 @@ const Assistant = (() => {
     const recentHistory = [..._history.slice(-9), { role: "user", content: userMessage }];
 
     try {
-      const response = await window.fetch(CONFIG.GROQ_API_URL, {
+      const response = await window.fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${CONFIG.GROQ_API_KEY}`,
-          "Content-Type":  "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: CONFIG.GROQ_CHAT_MODEL,
           messages: [

@@ -953,55 +953,11 @@ function _renderProfile() {
         </div>
       </div>
 
-      <!-- API Key Settings -->
-      <div class="card" style="margin-bottom:var(--sp-4)">
-        <div class="section-header" style="margin-bottom:var(--sp-4)">
-          <span class="section-title">⚙️ AI Settings</span>
-        </div>
-        <p style="font-size:var(--text-sm);color:var(--clr-text-2);margin-bottom:var(--sp-3)">
-          Paste your Groq API key to enable photo recognition and AI chat.
-          Get a free key at <strong>console.groq.com</strong>.
-        </p>
-        <input
-          type="password"
-          id="groqKeyInput"
-          class="text-input"
-          placeholder="gsk_..."
-          value="${localStorage.getItem('groq_api_key') || ''}"
-          style="margin-bottom:var(--sp-3)"
-        />
-        <button class="btn-primary" id="saveGroqKeyBtn" style="margin-top:0">
-          Save Key
-        </button>
-        ${localStorage.getItem('groq_api_key') ? `
-          <p style="font-size:var(--text-xs);color:var(--clr-success);margin-top:var(--sp-2)">✓ API key is set — AI features active</p>
-        ` : `
-          <p style="font-size:var(--text-xs);color:var(--clr-text-3);margin-top:var(--sp-2)">No key set — app running in demo mode</p>
-        `}
-      </div>
-
     </div>
   `;
 }
 
 function _wireProfile() {
-  // Save Groq API key to localStorage
-  const saveBtn = document.getElementById("saveGroqKeyBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const key = document.getElementById("groqKeyInput").value.trim();
-      if (key) {
-        localStorage.setItem("groq_api_key", key);
-        showToast("API key saved — AI features active ✓", "success");
-        navigateTo("profile");
-      } else {
-        localStorage.removeItem("groq_api_key");
-        showToast("API key cleared", "");
-        navigateTo("profile");
-      }
-    });
-  }
-
   // Animate bars after render
   setTimeout(() => {
     document.querySelectorAll(".style-bar-fill").forEach(bar => {

@@ -11,13 +11,11 @@ let styleProfile    = {};
 // ── Onboarding steps ──────────────────────────────
 const ONBOARDING_STEPS = [
   {
-    emoji: "👋",
     title: "Welcome to Garde",
-    sub: "Your personal AI wardrobe assistant. Let's set up your style profile — it only takes a minute.",
+    sub: "Your personal AI wardrobe assistant. Let's set up your style profile, it only takes a minute.",
     type: "info",
   },
   {
-    emoji: "🙋",
     title: "First, what's your name?",
     sub: "We'll use it to personalise your experience.",
     type: "text",
@@ -25,54 +23,50 @@ const ONBOARDING_STEPS = [
     placeholder: "Your first name",
   },
   {
-    emoji: "👔",
     title: "How would you describe your style?",
-    sub: "Pick the vibe that feels most like you on an average day.",
-    type: "single",
+    sub: "Pick all the vibes that feel like you.",
+    type: "multi",
     key: "baseStyle",
     options: [
-      { val: "casual",   emoji: "🧢", label: "Casual — relaxed & effortless" },
-      { val: "business", emoji: "💼", label: "Business — clean & polished" },
-      { val: "formal",   emoji: "🎩", label: "Formal — sharp & classic" },
-      { val: "sport",    emoji: "🏃", label: "Athletic — function meets style" },
+      { val: "casual",   label: "Casual, relaxed & effortless" },
+      { val: "business", label: "Business, clean & polished" },
+      { val: "formal",   label: "Formal, sharp & classic" },
+      { val: "sport",    label: "Athletic, function meets style" },
     ],
   },
   {
-    emoji: "🎨",
     title: "What's your colour comfort zone?",
-    sub: "This helps us suggest outfits that actually feel like you.",
-    type: "single",
+    sub: "Select all that apply.",
+    type: "multi",
     key: "colorPref",
     options: [
-      { val: "neutral",  emoji: "⚪", label: "Neutrals only — black, white, grey, beige" },
-      { val: "earthy",   emoji: "🟫", label: "Earthy & muted — navy, brown, olive" },
-      { val: "colorful", emoji: "🌈", label: "Bold & expressive — I love colour" },
-      { val: "mixed",    emoji: "🔀", label: "Mix it up — depends on the mood" },
+      { val: "neutral",  label: "Neutrals only: black, white, grey, beige" },
+      { val: "earthy",   label: "Earthy & muted: navy, brown, olive" },
+      { val: "colorful", label: "Bold & expressive, I love colour" },
+      { val: "mixed",    label: "Mix it up, depends on the mood" },
     ],
   },
   {
-    emoji: "🌤️",
     title: "Where do you spend most of your time?",
-    sub: "So outfit suggestions match your real lifestyle.",
-    type: "single",
+    sub: "Select all that apply.",
+    type: "multi",
     key: "lifestyle",
     options: [
-      { val: "office",   emoji: "🏢", label: "Office or campus — mostly indoors" },
-      { val: "outdoor",  emoji: "🌿", label: "On the move — a mix of inside & outside" },
-      { val: "social",   emoji: "🍽️", label: "Social life — dinners, events, weekends" },
-      { val: "home",     emoji: "🏠", label: "Home base — remote or flexible schedule" },
+      { val: "office",   label: "Office or campus, mostly indoors" },
+      { val: "outdoor",  label: "On the move, a mix of inside & outside" },
+      { val: "social",   label: "Social life, dinners, events, weekends" },
+      { val: "home",     label: "Home base, remote or flexible schedule" },
     ],
   },
   {
-    emoji: "🌍",
     title: "How do you feel about sustainable fashion?",
     sub: "We'll adjust our shopping advice to match your priorities.",
-    type: "single",
+    type: "multi",
     key: "sustainPref",
     options: [
-      { val: "high",    emoji: "♻️",  label: "Big priority — I rewear and buy mindfully" },
-      { val: "medium",  emoji: "🌱",  label: "Somewhat — I try when it's convenient" },
-      { val: "low",     emoji: "🛍️", label: "Not really — I just buy what I like" },
+      { val: "high",    label: "Big priority, I rewear and buy mindfully" },
+      { val: "medium",  label: "Somewhat, I try when it's convenient" },
+      { val: "low",     label: "Not really, I just buy what I like" },
     ],
   },
 ];
@@ -128,18 +122,21 @@ function _renderOnboardingStep() {
 
   const el = document.getElementById("onboardingStep");
   el.innerHTML = `
-    <div class="step-emoji">${step.emoji}</div>
     <h2 class="step-title">${step.title}</h2>
     <p class="step-sub">${step.sub}</p>
-    ${step.type === "single" ? `
+    ${step.type === "single" || step.type === "multi" ? `
       <div class="step-options">
-        ${step.options.map(o => `
-          <button class="step-option ${styleProfile[step.key] === o.val ? "selected" : ""}"
+        ${step.options.map(o => {
+          const current = styleProfile[step.key];
+          const isSelected = Array.isArray(current)
+            ? current.includes(o.val)
+            : current === o.val;
+          return `
+          <button class="step-option ${isSelected ? "selected" : ""}"
                   data-key="${step.key}" data-val="${o.val}">
-            <span class="option-emoji">${o.emoji}</span>
             ${o.label}
-          </button>
-        `).join("")}
+          </button>`;
+        }).join("")}
       </div>
     ` : step.type === "text" ? `
       <div class="step-options">
@@ -156,9 +153,20 @@ function _renderOnboardingStep() {
     btn.addEventListener("click", () => {
       const key = btn.dataset.key;
       const val = btn.dataset.val;
-      styleProfile[key] = val;
-      el.querySelectorAll(".step-option").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
+      if (step.type === "multi") {
+        const current = Array.isArray(styleProfile[key]) ? styleProfile[key] : [];
+        const idx = current.indexOf(val);
+        if (idx === -1) {
+          styleProfile[key] = [...current, val];
+        } else {
+          styleProfile[key] = current.filter(v => v !== val);
+        }
+        btn.classList.toggle("selected", styleProfile[key].includes(val));
+      } else {
+        styleProfile[key] = val;
+        el.querySelectorAll(".step-option").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+      }
     });
   });
 
@@ -185,8 +193,9 @@ function _setupOnboardingNav() {
     const step = ONBOARDING_STEPS[onboardingStep];
 
     // Require a selection or name on choice steps
-    if (step.type === "single" && !styleProfile[step.key]) {
-      showToast("Please pick an option to continue", "error");
+    if ((step.type === "single" || step.type === "multi") &&
+        (!styleProfile[step.key] || (Array.isArray(styleProfile[step.key]) && styleProfile[step.key].length === 0))) {
+      showToast("Please pick at least one option to continue", "error");
       return;
     }
     if (step.type === "text" && !styleProfile[step.key]) {
@@ -224,6 +233,11 @@ function _showApp() {
   _setupScrollShadow();
   _updateAvatarBtn();
   navigateTo("dashboard");
+
+  // Show how-to modal on first launch after onboarding
+  if (!localStorage.getItem("sw_seen_howto")) {
+    setTimeout(_showHowToModal, 800);
+  }
 }
 
 function _updateAvatarBtn() {
@@ -316,25 +330,25 @@ function _updateSensorDisplay() {
 
   hEl.textContent = `${h}%`;
   if (h < 40) {
-    hSt.textContent  = "Too dry — fibres may weaken";
+    hSt.textContent  = "Too dry, fibres may weaken";
     hSt.className    = "sensor-status warn";
   } else if (h > 60) {
-    hSt.textContent  = "Too damp — mould risk";
+    hSt.textContent  = "Too damp, mould risk";
     hSt.className    = "sensor-status warn";
   } else {
-    hSt.textContent  = "Good — ideal for fabrics";
+    hSt.textContent  = "Good, ideal for fabrics";
     hSt.className    = "sensor-status ok";
   }
 
   tEl.textContent = `${t}°C`;
   if (t < 15) {
-    tSt.textContent = "A bit cold — check wool items";
+    tSt.textContent = "A bit cold, check wool items";
     tSt.className   = "sensor-status warn";
   } else if (t > 22) {
-    tSt.textContent = "Too warm — avoid direct sun";
+    tSt.textContent = "Too warm, avoid direct sun";
     tSt.className   = "sensor-status warn";
   } else {
-    tSt.textContent = "Good — clothes safe";
+    tSt.textContent = "Good, clothes safe";
     tSt.className   = "sensor-status ok";
   }
 }
@@ -342,8 +356,7 @@ function _updateSensorDisplay() {
 // ── Weather Badge ──────────────────────────────────
 function _updateWeatherBadge(ctx) {
   if (!ctx) return;
-  document.getElementById("weatherIcon").textContent  = ctx.icon;
-  document.getElementById("weatherTemp").textContent  = `${ctx.temp}°C`;
+  document.getElementById("weatherTemp").textContent = `${ctx.temp}°C`;
 }
 
 // ══════════════════════════════════════════════════
@@ -359,7 +372,7 @@ function _renderDashboard() {
 
   return `
     <div class="screen">
-      <p class="dash-greeting">Good ${_timeOfDay()}, ${Profile.get().name || "there"} 👋</p>
+      <p class="dash-greeting">Good ${_timeOfDay()}, ${Profile.get().name || "there"}</p>
       <p class="dash-date">${today}</p>
 
       <!-- Weather Card -->
@@ -370,7 +383,7 @@ function _renderDashboard() {
             <div class="weather-desc">${ctx ? ctx.description : "Loading..."}</div>
             <div class="weather-location">${ctx ? ctx.location : ""}</div>
           </div>
-          <div class="weather-icon-big">${ctx ? ctx.icon : "🌡️"}</div>
+          <div class="weather-icon-big">${ctx ? ctx.description : ""}</div>
         </div>
         <div class="weather-meta">
           <div class="weather-meta-item">
@@ -383,7 +396,7 @@ function _renderDashboard() {
           </div>
           <div class="weather-meta-item">
             <span class="weather-meta-label">Suggestion</span>
-            <span class="weather-meta-val" style="font-size:0.7rem">${ctx ? ctx.summary : "—"}</span>
+            <span class="weather-meta-val" style="font-size:0.7rem">${ctx ? ctx.summary : "..."}</span>
           </div>
         </div>
       </div>
@@ -406,7 +419,7 @@ function _renderDashboard() {
 
       <!-- Today's Outfit -->
       <div class="section-header">
-        <span class="section-title">Today's Outfit ✨</span>
+        <span class="section-title">Today's Outfit</span>
         <button class="section-link" onclick="navigateTo('outfits')">See more</button>
       </div>
 
@@ -419,17 +432,17 @@ function _renderDashboard() {
         </div>
       ` : `
         <div class="card" style="text-align:center;padding:var(--sp-8)">
-          <p style="color:var(--clr-text-2)">Add more items to get outfit suggestions ✨</p>
+          <p style="color:var(--clr-text-2)">Add more items to get outfit suggestions</p>
         </div>
       `}
 
       <!-- Most worn -->
       ${stats.topWorn ? `
         <div class="section-header" style="margin-top:var(--sp-6)">
-          <span class="section-title">Your Favourite 💛</span>
+          <span class="section-title">Your Favourite</span>
         </div>
         <div class="card" style="display:flex;align-items:center;gap:var(--sp-4)">
-          <div style="font-size:2.5rem">${CATEGORY_EMOJI[stats.topWorn.category] || "👕"}</div>
+          <div style="width:56px;height:56px;flex-shrink:0">${_itemIcon(stats.topWorn, { size: "56px", radius: "var(--radius-md)" })}</div>
           <div>
             <div style="font-weight:700">${stats.topWorn.name || stats.topWorn.category}</div>
             <div style="font-size:var(--text-sm);color:var(--clr-text-2)">Worn ${stats.topWorn.timesWorn} times</div>
@@ -439,25 +452,25 @@ function _renderDashboard() {
 
       <!-- Wardrobe Sensors -->
       <div class="section-header" style="margin-top:var(--sp-6)">
-        <span class="section-title">Wardrobe Sensors 🌡️</span>
+        <span class="section-title">Wardrobe Sensors</span>
         <span class="sensor-live-dot"></span>
       </div>
       <div class="sensor-card">
         <div class="sensor-item">
-          <div class="sensor-icon">💧</div>
+          <div class="sensor-icon"><i data-lucide="droplets"></i></div>
           <div class="sensor-info">
             <div class="sensor-label">Humidity</div>
             <div class="sensor-value" id="sensorHumidity">--%</div>
-            <div class="sensor-status" id="sensorHumidityStatus">—</div>
+            <div class="sensor-status" id="sensorHumidityStatus"></div>
           </div>
         </div>
         <div class="sensor-divider"></div>
         <div class="sensor-item">
-          <div class="sensor-icon">🌡️</div>
+          <div class="sensor-icon"><i data-lucide="thermometer"></i></div>
           <div class="sensor-info">
             <div class="sensor-label">Temperature</div>
             <div class="sensor-value" id="sensorTemp">--°C</div>
-            <div class="sensor-status" id="sensorTempStatus">—</div>
+            <div class="sensor-status" id="sensorTempStatus"></div>
           </div>
         </div>
       </div>
@@ -510,7 +523,6 @@ function _renderWardrobe(activeFilter = "all") {
           </div>
         `).join("") : `
           <div class="empty-wardrobe">
-            <div class="empty-icon">👗</div>
             <p>No items in this category yet.<br/>Tap + to add your first piece.</p>
           </div>
         `}
@@ -568,7 +580,6 @@ function _renderOutfits() {
       <!-- Weather strip -->
       <div class="outfit-context-bar" style="margin-bottom:var(--sp-4)">
         <div class="context-weather">
-          <span>${ctx ? ctx.icon : "🌡️"}</span>
           <span>${ctx ? `${ctx.temp}°C · ${ctx.summary}` : "Loading weather..."}</span>
         </div>
       </div>
@@ -647,7 +658,7 @@ function _flatlaySlotHTML(cat, label) {
       <div class="slot-icon">
         ${item
           ? _itemIcon(item, { size: "80px", radius: "var(--radius-lg)" })
-          : `<div class="slot-empty-icon"><span>${CATEGORY_EMOJI[cat] || "+"}</span></div>`
+          : `<div class="slot-empty-icon"><span>+</span></div>`
         }
       </div>
       <div class="slot-meta">
@@ -659,12 +670,14 @@ function _flatlaySlotHTML(cat, label) {
 }
 
 function _wireOutfits() {
-  // Wire profile preferences from onboarding
+  // Wire profile preferences from onboarding (arrays from multi-select, take first value)
   const profile = Profile.get();
-  if (profile.baseStyle && _looksOccasion === "casual") {
-    _looksOccasion = profile.baseStyle;
+  const baseStyle = Array.isArray(profile.baseStyle) ? profile.baseStyle[0] : profile.baseStyle;
+  if (baseStyle && _looksOccasion === "casual") {
+    _looksOccasion = baseStyle;
   }
-  _preferredColors = COLOR_PREF_MAP[profile.colorPref] || [];
+  const colorPref = Array.isArray(profile.colorPref) ? profile.colorPref[0] : profile.colorPref;
+  _preferredColors = COLOR_PREF_MAP[colorPref] || [];
 
   // Auto-generate initial outfit
   const generated = OutfitEngine.generate(null, currentWeather, _looksOccasion, _preferredColors);
@@ -703,7 +716,7 @@ function _wireOutfits() {
   document.getElementById("wearLookBtn").addEventListener("click", () => {
     const worn = Object.values(_looksOutfit).filter(Boolean);
     worn.forEach(item => wardrobe.markWorn(item.id));
-    showToast(`${worn.length} items logged as worn 👗`, "success");
+    showToast(`${worn.length} items logged as worn`, "success");
   });
 
   // Save look (built outfit)
@@ -782,7 +795,7 @@ function _refreshFlatlay() {
     const item = _looksOutfit[cat];
     el.querySelector(".slot-icon").innerHTML = item
       ? _itemIcon(item, { size: "80px", radius: "var(--radius-lg)" })
-      : `<div class="slot-empty-icon"><span>${CATEGORY_EMOJI[cat] || "+"}</span></div>`;
+      : `<div class="slot-empty-icon"><span>+</span></div>`;
     el.querySelector(".slot-name").textContent = item ? (item.name || item.category) : "tap to pick";
   });
   lucide.createIcons();
@@ -807,8 +820,8 @@ function _renderAssistant() {
     <div class="chat-container">
       <div class="chat-messages" id="chatMessages">
         <div class="chat-bubble ai">
-          Hey! I'm Wardi, your AI wardrobe assistant 👋<br/><br/>
-          Ask me anything — outfit ideas, whether to buy something new, or what to wear for a specific occasion.
+          Hey! I'm Wardi, your AI wardrobe assistant.<br/><br/>
+          Ask me anything: outfit ideas, whether to buy something new, or what to wear for a specific occasion.
         </div>
       </div>
 
@@ -900,8 +913,12 @@ function _renderProfile() {
     <div class="screen">
       <div class="profile-header">
         <div class="profile-avatar">${(profile.name || "?")[0].toUpperCase()}</div>
-        <div class="profile-name">${profile.name || "You"}</div>
-        <div class="profile-style-tag">✦ ${_styleLabel(profile.baseStyle)}</div>
+        <div class="profile-name" id="profileNameDisplay">${profile.name || "You"}</div>
+        <div class="profile-style-tag">${_styleLabel(profile.baseStyle)}</div>
+        <div class="profile-action-row">
+          <button class="profile-edit-btn" id="profileEditBtn">Edit name</button>
+          <button class="profile-howto-btn" id="profileHowtoBtn">How to use</button>
+        </div>
       </div>
 
       <!-- Wardrobe stats -->
@@ -986,23 +1003,150 @@ function _wireProfile() {
       requestAnimationFrame(() => { bar.style.width = target; });
     });
   }, 50);
+
+  document.getElementById("profileEditBtn").addEventListener("click", _showProfileEditForm);
+  document.getElementById("profileHowtoBtn").addEventListener("click", _showHowToModal);
+}
+
+function _showProfileEditForm() {
+  const nameDisplay = document.getElementById("profileNameDisplay");
+  const editBtn     = document.getElementById("profileEditBtn");
+  const currentName = Profile.get()?.name || "";
+
+  nameDisplay.innerHTML = `
+    <input id="profileNameInput" type="text" value="${currentName}"
+      style="background:var(--clr-surface-2);border:1px solid var(--clr-primary);
+             border-radius:var(--radius-md);padding:var(--sp-2) var(--sp-3);
+             color:var(--clr-text-1);font-size:var(--text-base);font-weight:700;
+             text-align:center;width:180px;outline:none;" maxlength="30" />
+  `;
+  editBtn.textContent = "Save";
+  editBtn.removeEventListener("click", _showProfileEditForm);
+
+  function save() {
+    const input = document.getElementById("profileNameInput");
+    const newName = (input?.value || "").trim();
+    if (newName) {
+      const existing = Profile.get() || {};
+      Profile.save({ ...existing, name: newName });
+      _updateAvatarBtn();
+    }
+    // Re-render profile to reflect saved name
+    const main = document.getElementById("mainContent");
+    main.innerHTML = _renderProfile();
+    _wireProfile();
+  }
+
+  editBtn.addEventListener("click", save);
+  document.getElementById("profileNameInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") save();
+  });
+  document.getElementById("profileNameInput").focus();
 }
 
 function _styleLabel(base) {
   const labels = { casual: "Casual Style", business: "Business Style", formal: "Formal Style", sport: "Athletic Style" };
-  return labels[base] || "Personal Style";
+  const val = Array.isArray(base) ? base[0] : base;
+  return labels[val] || "Personal Style";
 }
 
 function _sustainTitle(score) {
-  if (score >= 70) return "Sustainable Champion 🌿";
-  if (score >= 40) return "Mindful Dresser 🌱";
-  return "Room to Improve ♻️";
+  if (score >= 70) return "Sustainable Champion";
+  if (score >= 40) return "Mindful Dresser";
+  return "Room to Improve";
 }
 
 function _sustainDesc(score, total) {
   if (score >= 70) return `You've worn ${score}% of your wardrobe in the last 30 days. Excellent rotation!`;
   if (score >= 40) return `${score}% of your items worn recently. Try revisiting pieces you haven't worn in a while.`;
   return `Only ${score}% of your ${total} items worn in the last 30 days. Consider rewearing more before buying new.`;
+}
+
+// ── How-to-use modal ───────────────────────────────
+function _showHowToModal() {
+  if (document.getElementById("howToModal")) return;
+  const modal = document.createElement("div");
+  modal.id = "howToModal";
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:999;
+    background:rgba(0,0,0,0.6);
+    display:flex;align-items:flex-end;justify-content:center;
+  `;
+  modal.innerHTML = `
+    <div style="
+      background:var(--clr-surface-1);border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+      width:100%;max-width:480px;padding:var(--sp-6) var(--sp-5) calc(var(--sp-6) + env(safe-area-inset-bottom));
+      max-height:90vh;overflow-y:auto;
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5)">
+        <span style="font-size:var(--text-lg);font-weight:800;color:var(--clr-text-1)">How to use Garde</span>
+        <button id="howToCloseBtn" style="background:none;border:none;color:var(--clr-text-3);font-size:20px;cursor:pointer;padding:var(--sp-1)">x</button>
+      </div>
+      <div class="how-to-steps">
+        <div class="how-to-step">
+          <div class="how-to-num">1</div>
+          <div class="how-to-step-text">
+            <strong>Add your clothes</strong>
+            <span>Tap the + button, take a photo or upload one. The AI will detect the item and fill in the details automatically.</span>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">2</div>
+          <div class="how-to-step-text">
+            <strong>Get outfit ideas</strong>
+            <span>Go to Outfits, pick an item you want to wear, and the app will build a complete look based on your wardrobe and the weather.</span>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">3</div>
+          <div class="how-to-step-text">
+            <strong>Ask for advice</strong>
+            <span>Use the AI chat to get outfit suggestions, check if a purchase makes sense, or plan what to pack for a trip.</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--clr-surface-2);border-radius:var(--radius-md);padding:var(--sp-4);margin-top:var(--sp-2)">
+        <div style="font-size:var(--text-sm);font-weight:700;color:var(--clr-text-1);margin-bottom:var(--sp-2)">Photo tips</div>
+        <p class="how-to-tip">For best results, place items flat on a plain surface or hang them against a plain wall. Good lighting makes the AI more accurate.</p>
+      </div>
+      <button id="howToGotItBtn" style="
+        width:100%;margin-top:var(--sp-5);padding:var(--sp-3);
+        background:var(--clr-primary);color:#fff;border:none;
+        border-radius:var(--radius-full);font-size:var(--text-base);font-weight:700;cursor:pointer;
+      ">Got it</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) _closeHowToModal(); });
+  document.getElementById("howToCloseBtn").addEventListener("click", _closeHowToModal);
+  document.getElementById("howToGotItBtn").addEventListener("click", _closeHowToModal);
+}
+
+function _closeHowToModal() {
+  const modal = document.getElementById("howToModal");
+  if (modal) modal.remove();
+  localStorage.setItem("sw_seen_howto", "1");
+}
+
+// ── Background removal via /api/remove-bg ─────────
+async function _tryRemoveBg(base64Image) {
+  try {
+    const res = await fetch("/api/remove-bg", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: base64Image }),
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -1039,15 +1183,24 @@ function _setupAddModal() {
     if (!file) return;
 
     const compressed = await compressImage(file);
-    _pendingImage = compressed;
     _showImagePreview(compressed);
 
     // Show detecting overlay
-    document.getElementById("detectingOverlay").classList.remove("hidden");
+    const overlay    = document.getElementById("detectingOverlay");
+    const detectText = overlay.querySelector(".detecting-text");
+    overlay.classList.remove("hidden");
 
-    // Detect all items in photo
-    const items = await Recognition.analyzeMultiple(compressed);
-    document.getElementById("detectingOverlay").classList.add("hidden");
+    // Step 1: remove background (silent fallback if key not set)
+    detectText.textContent = "Removing background...";
+    const noBg = await _tryRemoveBg(compressed);
+    _pendingImage = noBg || compressed;
+    if (noBg) _showImagePreview(noBg);
+
+    // Step 2: AI recognition
+    detectText.textContent = "AI is analyzing your item...";
+    const items = await Recognition.analyzeMultiple(_pendingImage);
+    overlay.classList.add("hidden");
+    detectText.textContent = "AI is analyzing your item...";
 
     _detectedItems = items;
 
@@ -1138,8 +1291,7 @@ function _showMultiItemReview(items, photoBase64) {
   const reviewHtml = `
     <div id="multiItemReview">
       <p style="font-size:var(--text-sm);color:var(--clr-text-2);margin-bottom:var(--sp-4)">
-        ✦ AI detected <strong>${items.length} items</strong> — icons are generating.
-        Review and save.
+        AI detected <strong>${items.length} items</strong>. Review and save.
       </p>
 
       <div id="detectedItemsList">
@@ -1243,7 +1395,7 @@ function _saveAllDetectedItems() {
   });
 
   closeAddModal();
-  showToast(`${_detectedItems.length} items added to wardrobe ✓`, "success");
+  showToast(`${_detectedItems.length} items added to wardrobe`, "success");
 
   if (currentScreen === "wardrobe")  navigateTo("wardrobe");
   if (currentScreen === "dashboard") navigateTo("dashboard");
@@ -1343,7 +1495,7 @@ function _saveSingleItem() {
   });
 
   closeAddModal();
-  showToast(`${item.name || "Item"} added to wardrobe ✓`, "success");
+  showToast(`${item.name || "Item"} added to wardrobe`, "success");
 
   if (currentScreen === "wardrobe")  navigateTo("wardrobe");
   if (currentScreen === "dashboard") navigateTo("dashboard");
@@ -1360,7 +1512,7 @@ function _showDupWarning(dupes, color, category) {
   }
   const names = dupes.slice(0, 2).map(d => d.name || `${d.color} ${d.category}`).join(", ");
   const extra = dupes.length > 2 ? ` +${dupes.length - 2} more` : "";
-  warn.innerHTML = `⚠️ You already own <strong>${dupes.length}</strong> similar item${dupes.length > 1 ? "s" : ""} (${names}${extra}). Still want to add another?`;
+  warn.innerHTML = `You already own <strong>${dupes.length}</strong> similar item${dupes.length > 1 ? "s" : ""} (${names}${extra}). Still want to add another?`;
 }
 
 function _resetDupState() {
@@ -1398,7 +1550,7 @@ function openItemDetail(id) {
         <div class="item-stat-label">Times worn</div>
       </div>
       <div class="item-stat">
-        <div class="item-stat-val" style="font-size:var(--text-sm)">${item.lastWorn || "—"}</div>
+        <div class="item-stat-val" style="font-size:var(--text-sm)">${item.lastWorn || "N/A"}</div>
         <div class="item-stat-label">Last worn</div>
       </div>
       <div class="item-stat">
@@ -1431,7 +1583,7 @@ function openItemDetail(id) {
 
   document.getElementById("wearItemBtn").addEventListener("click", () => {
     wardrobe.markWorn(id);
-    showToast("Outfit logged! Wear count updated ✓", "success");
+    showToast("Outfit logged! Wear count updated", "success");
     closeItemDetail();
     if (currentScreen === "wardrobe")   navigateTo("wardrobe");
     if (currentScreen === "dashboard")  navigateTo("dashboard");

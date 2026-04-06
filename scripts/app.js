@@ -1238,20 +1238,16 @@ function _setupAddModal() {
       overlay.classList.add("hidden");
       _showOutfitReview(items, compressed);
     } else {
-      // Single clothing item — remove background, then show item form
-      detectText.textContent = "Removing background...";
-      const noBg = await _tryRemoveBg(compressed);
-      _pendingImage = noBg || compressed;
-      if (noBg) _showImagePreview(noBg);
+      // Single clothing item — generate a clean product image from the AI description
+      detectText.textContent = "Generating product image...";
+      const productImageUrl = Recognition.generateIcon(items[0]);
+      _pendingImage = productImageUrl;
+
+      // Show the generated product image in the preview
+      if (productImageUrl) _showImagePreview(productImageUrl);
       overlay.classList.add("hidden");
 
       _applyRecognitionResult(items[0]);
-
-      // Auto-extract color from the cleaned photo
-      _pendingColorRgb = await _extractColorFromImage(_pendingImage);
-      if (_pendingColorRgb && !items[0].color) {
-        _setActive("colorSelect", _rgbToColorKey(..._pendingColorRgb));
-      }
       document.getElementById("itemForm").classList.remove("hidden");
       document.getElementById("saveItemBtn").classList.remove("hidden");
       document.getElementById("cancelAddBtn").classList.remove("hidden");

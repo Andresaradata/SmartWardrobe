@@ -81,7 +81,50 @@ const ONBOARDING_STEPS = [
     }
   });
 })();
+// ── Auto-extract dominant color from a photo ────────
+let _pendingColorRgb = null;
 
+async function _extractColorFromImage(base64) {
+  return new Promise((resolve) => {
+    if (typeof ColorThief === 'undefined') { resolve(null); return; }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const [r, g, b] = new ColorThief().getColor(img);
+        resolve([r, g, b]);
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = base64;
+  });
+}
+
+// Maps [r,g,b] → one of the color keys your app already uses
+function _rgbToColorKey(r, g, b) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 510;
+  const s = max === min ? 0 : (max - min) / (l > 0.5 ? 2 * 255 - max - min : max + min);
+  if (s < 0.12) {
+    if (l > 0.85) return 'white';
+    if (l < 0.20) return 'black';
+    return 'grey';
+  }
+  let h = 0;
+  const d = max - min;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  h = Math.round(h * 360);
+  if (h < 20 || h >= 340) return 'red';
+  if (h < 40)  return 'beige';
+  if (h < 80)  return 'beige';
+  if (h < 160) return 'green';
+  if (h < 200) return 'blue';
+  if (h < 250) return 'navy';
+  if (h < 290) return 'grey';
+  if (h < 340) return 'pink';
+  return 'grey';
+}
 // ── Boot ───────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", async () => {
   // Fetch weather in background immediately
@@ -1195,6 +1238,12 @@ function _setupAddModal() {
       overlay.classList.add("hidden");
 
       _applyRecognitionResult(items[0]);
+
+      // Auto-extract color from the cleaned photo
+      _pendingColorRgb = await _extractColorFromImage(_pendingImage);
+      if (_pendingColorRgb && !items[0].color) {
+        _setActive("colorSelect", _rgbToColorKey(..._pendingColorRgb));
+      }
       document.getElementById("itemForm").classList.remove("hidden");
       document.getElementById("saveItemBtn").classList.remove("hidden");
       document.getElementById("cancelAddBtn").classList.remove("hidden");

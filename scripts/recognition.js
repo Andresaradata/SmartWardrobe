@@ -126,24 +126,7 @@ Rules:
    * The seed is deterministic so the same item always gets the same photo.
    */
   // Icon generation is now handled by SVG in wardrobe.js — no external API needed
-  function generateIcon(item) {
-  const prompt = [
-    item.color,
-    item.name || item.category,
-    "clothing",
-    "product photo",
-    "white background",
-    "flat lay",
-    "studio lighting",
-    "clean minimal",
-    "ecommerce style"
-  ].join(", ");
-
-  const seed = (item.name + item.color + item.category)
-    .split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=400&nologo=true&model=flux&seed=${seed}`;
-}
+  function generateIcon(item) { return null; }
 
   return { analyzeMultiple, generateIcon };
 })();

@@ -1477,7 +1477,8 @@ function _saveSingleItem() {
     timesWorn: document.getElementById("itemTimesWorn").value || 0,
     lastWorn:  document.getElementById("itemLastWorn").value  || null,
     category, color, warmth, season, style,
-    image: _pendingImage,
+    image:    _pendingImage,
+    colorRgb: _pendingColorRgb,
   });
 
   closeAddModal();

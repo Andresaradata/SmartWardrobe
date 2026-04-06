@@ -1112,23 +1112,27 @@ function _closeHowToModal() {
   localStorage.setItem("sw_seen_howto", "1");
 }
 
-// ── Background removal via /api/remove-bg ─────────
+// ── Background removal via @imgly (runs in-browser, no server needed) ──
 async function _tryRemoveBg(base64Image) {
   try {
-    const res = await fetch("/api/remove-bg", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: base64Image }),
+    if (typeof imglyRemoveBackground === 'undefined') return null;
+
+    const fetchRes  = await fetch(base64Image);
+    const inputBlob = await fetchRes.blob();
+
+    const outputBlob = await imglyRemoveBackground(inputBlob, {
+      publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/',
+      debug: false,
     });
-    if (!res.ok) return null;
-    const blob = await res.blob();
+
     return await new Promise((resolve) => {
-      const reader = new FileReader();
+      const reader  = new FileReader();
       reader.onload  = () => resolve(reader.result);
       reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(outputBlob);
     });
-  } catch {
+  } catch (err) {
+    console.warn('[BG Removal] Failed, using original photo:', err.message);
     return null;
   }
 }

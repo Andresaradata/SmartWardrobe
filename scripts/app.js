@@ -670,12 +670,19 @@ function _renderOutfits() {
           Save a built look, or upload an outfit photo via the + button
         </div>
       ` : `
-        <div class="saved-looks-grid">
+    <div class="saved-looks-grid">
           ${savedLooks.map(l => `
             <div class="saved-look-card" data-look-id="${l.id}">
               ${l.photo
                 ? `<img src="${l.photo}" class="saved-look-photo" alt="${l.label}" />`
-                : `<div class="saved-look-icons">${l.icons || ""}</div>`
+                : l.images && l.images.some(i => i.image)
+                  ? `<div class="look-collage look-collage--${Math.min(l.images.length, 4)}">
+                       ${l.images.slice(0, 4).map(i => i.image
+                         ? `<div class="look-collage-slot"><img src="${i.image}" alt="${i.name}" /></div>`
+                         : `<div class="look-collage-slot look-collage-slot--svg">${_itemIcon({ image: null, color: i.color, category: i.category }, { size: "100%", radius: "0" })}</div>`
+                       ).join("")}
+                     </div>`
+                  : `<div class="saved-look-icons">${l.icons || ""}</div>`
               }
               <div class="saved-look-meta">
                 <span class="saved-look-label">${l.label}</span>

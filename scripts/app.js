@@ -759,12 +759,13 @@ function _wireOutfits() {
   });
 
   // Save look (built outfit)
-  document.getElementById("saveLookBtn").addEventListener("click", () => {
+document.getElementById("saveLookBtn").addEventListener("click", () => {
     const pieces = Object.values(_looksOutfit).filter(Boolean);
     if (!pieces.length) { showToast("Build an outfit first", "error"); return; }
-    const icons = pieces.map(i => _itemIcon(i, { size: "48px", radius: "var(--radius-sm)" })).join("");
-    const label = `${_looksOccasion.charAt(0).toUpperCase() + _looksOccasion.slice(1)} look`;
-    _persistLook({ id: Date.now().toString(), label, icons, photo: null, date: new Date().toISOString() });
+    const label  = `${_looksOccasion.charAt(0).toUpperCase() + _looksOccasion.slice(1)} look`;
+    const images = pieces.map(i => ({ id: i.id, image: i.image || null, color: i.color, category: i.category, name: i.name || i.category }));
+    const icons  = pieces.map(i => _itemIcon(i, { size: "48px", radius: "var(--radius-sm)" })).join("");
+    _persistLook({ id: Date.now().toString(), label, icons, images, photo: null, date: new Date().toISOString() });
     showToast("Look saved!", "success");
     navigateTo("outfits");
   });
